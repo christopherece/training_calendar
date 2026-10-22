@@ -1,0 +1,1005 @@
+<title>Dockside Training</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: a harbour chart. Ruler-ticked header, month grid on the left, selected-day sheet on the right. */
+:root {
+  --bg: #EEF3F4;
+  --surface: #FFFFFF;
+  --surface-2: #E4ECEE;
+  --ink: #0D2230;
+  --muted: #546B7A;
+  --line: #CFDADF;
+  --accent: #0B6E99;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #D6E9F2;
+  --ok: #17795A;
+  --ok-soft: #D8EFE6;
+  --bad: #B3382C;
+  --bad-soft: #F6DCD8;
+  --c-safety: #A86B00;
+  --c-rescue: #0F8B6E;
+  --c-fire: #C23B2E;
+  --c-systems: #6D4AC4;
+  --c-env: #5F7F1F;
+  --c-induction: #5B7080;
+  --font-display: 'Archivo', 'Arial Narrow', Arial, sans-serif;
+  --font-body: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A1822; --surface: #10242F; --surface-2: #17323F; --ink: #E7F0F3; --muted: #8CA5B3; --line: #244454;
+    --accent: #55B9E6; --accent-ink: #06202C; --accent-soft: #12394C;
+    --ok: #4FD1A5; --ok-soft: #10382F; --bad: #FF8678; --bad-soft: #44201C;
+    --c-safety: #E3A93F; --c-rescue: #47CFA9; --c-fire: #FF8678; --c-systems: #AB92FF; --c-env: #A9CB54; --c-induction: #9DB3C0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A1822; --surface: #10242F; --surface-2: #17323F; --ink: #E7F0F3; --muted: #8CA5B3; --line: #244454;
+  --accent: #55B9E6; --accent-ink: #06202C; --accent-soft: #12394C;
+  --ok: #4FD1A5; --ok-soft: #10382F; --bad: #FF8678; --bad-soft: #44201C;
+  --c-safety: #E3A93F; --c-rescue: #47CFA9; --c-fire: #FF8678; --c-systems: #AB92FF; --c-env: #A9CB54; --c-induction: #9DB3C0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); }
+
+.page {
+  max-width: 1120px; margin: 0 auto; padding-block: 22px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; }
+h1 { margin: 0; font-family: var(--font-display); font-stretch: 125%; font-weight: 800; font-size: clamp(28px, 6vw, 44px); line-height: 1; letter-spacing: -0.01em; }
+.sub { margin: 8px 0 0; color: var(--muted); max-width: 52ch; }
+.who { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+.who-name { font-weight: 600; }
+.ruler {
+  height: 12px; margin-top: 16px; border-bottom: 1px solid var(--ink);
+  background:
+    repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 40px) left bottom / 100% 12px no-repeat,
+    repeating-linear-gradient(90deg, var(--muted) 0 1px, transparent 1px 8px) left bottom / 100% 6px no-repeat;
+}
+
+/* Bar: tabs + actions */
+.bar-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px 16px; margin-top: 14px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 2px; }
+.tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 14px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab:hover { color: var(--ink); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.btn { background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 7px 14px; min-height: 38px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { background: var(--bad); border-color: var(--bad); color: var(--bg); }
+.btn.quiet { border-color: transparent; background: none; color: var(--accent); padding-inline: 8px; }
+.btn.small { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn:disabled { opacity: .55; cursor: default; }
+
+/* Filters */
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.fchip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
+.fchip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.sw { width: 9px; height: 9px; border-radius: 2px; background: var(--cat, var(--muted)); display: inline-block; flex: none; }
+
+/* Notices */
+.note, .empty { margin-top: 14px; padding: 12px 16px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.empty { flex-direction: column; align-items: flex-start; padding: 20px; }
+.empty h3 { margin: 0; font-family: var(--font-display); font-stretch: 112%; font-size: 20px; }
+.empty p { margin: 0; max-width: 56ch; }
+.pad { padding: 18px 0; }
+
+/* Month view */
+.cal-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; margin-top: 18px; }
+@media (max-width: 920px) { .cal-layout { grid-template-columns: minmax(0, 1fr); } }
+.cal-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+.month-label { margin: 0; font-family: var(--font-display); font-stretch: 112%; font-weight: 700; font-size: 24px; }
+.cal-nav { display: flex; gap: 6px; }
+.dow, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.dow span { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 4px 6px; }
+.grid { gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.cell { appearance: none; border: 0; margin: 0; text-align: left; background: var(--surface); padding: 6px; min-height: 100px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; min-width: 0; position: relative; }
+.cell:hover { background: var(--accent-soft); }
+.cell.out { background: var(--surface-2); color: var(--muted); }
+.cell.sel { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 1; }
+.num { font: 500 13px var(--font-mono); align-self: flex-start; }
+.cell.today .num { background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 0 7px; }
+.chips { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.chip { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 11px; line-height: 1.35; padding: 2px 5px; border-radius: 3px; background: var(--surface-2); background: color-mix(in srgb, var(--cat) 16%, var(--surface)); overflow: hidden; white-space: nowrap; }
+.chip .tm { font: 400 10px var(--font-mono); color: var(--muted); flex: none; }
+.chip .t { overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.chip-req { font: 500 9px var(--font-mono); letter-spacing: .06em; color: var(--bad); flex: none; }
+.more { font-size: 11px; color: var(--muted); padding-left: 5px; }
+.dots { display: none; gap: 3px; flex-wrap: wrap; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cat); }
+@media (max-width: 640px) {
+  .chips { display: none; }
+  .dots { display: flex; }
+  .cell { min-height: 58px; padding: 4px; }
+  .dow span { padding-inline: 2px; text-align: center; }
+}
+
+/* Day sheet */
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; min-width: 0; }
+.sheet-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.sheet-title { margin: 0; font-family: var(--font-display); font-stretch: 112%; font-size: 20px; font-weight: 700; }
+
+/* Session card */
+.sess { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.sheet .sess { border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 14px 0; }
+.sheet .sess:first-of-type { border-top: 0; }
+.sess.past .sess-title { color: var(--muted); }
+.sess-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cat { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.sess-title { margin: 0; font-family: var(--font-display); font-stretch: 105%; font-weight: 700; font-size: 17px; line-height: 1.25; text-wrap: balance; overflow-wrap: anywhere; }
+.meta { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 13.5px; color: var(--muted); }
+.meta .mono { color: var(--ink); font-size: 13px; }
+.meta li { overflow-wrap: anywhere; }
+.sess-notes { margin: 0; font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; }
+.capline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13px; color: var(--muted); }
+.meter { flex: 0 0 90px; height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden; display: inline-block; }
+.meter i { display: block; height: 100%; background: var(--cat); }
+.full { color: var(--bad); font-weight: 600; }
+.sess-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 2px; }
+.hint { font-size: 13px; color: var(--muted); }
+.confirm { padding: 10px 12px; background: var(--bad-soft); border-radius: 5px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13.5px; }
+.confirm p { margin: 0; flex: 1 1 200px; }
+
+.tag { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
+.tag-req { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tag-accent { border-color: var(--accent); color: var(--accent); }
+.pill { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.pill-accent { background: var(--accent-soft); color: var(--accent); }
+.pill-ok { background: var(--ok-soft); color: var(--ok); }
+.pill-bad { background: var(--bad-soft); color: var(--bad); }
+.pill-muted { background: var(--surface-2); color: var(--muted); }
+
+.roster { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.rrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.rname { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
+.mark { display: flex; gap: 6px; }
+
+/* Agenda + mine */
+.agenda, .mine { margin-top: 18px; display: grid; gap: 22px; }
+.month-div { margin: 8px 0 0; font-family: var(--font-display); font-stretch: 112%; font-size: 22px; font-weight: 700; }
+.day-group { display: grid; gap: 10px; }
+.day-h { margin: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font: 500 13px var(--font-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.sec-h { margin: 0 0 10px; font-family: var(--font-display); font-stretch: 108%; font-size: 18px; font-weight: 700; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.stat { background: var(--surface); padding: 14px 18px; }
+.stat b { display: block; font: 500 34px/1 var(--font-mono); }
+.stat span { font-size: 13px; color: var(--muted); }
+
+/* Modal */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(5, 15, 22, .6); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.modal { width: 100%; max-width: 580px; margin-block: 4vh; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
+.modal-title { margin: 0 0 14px; font-family: var(--font-display); font-stretch: 112%; font-size: 22px; font-weight: 700; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.span2 { grid-column: 1 / -1; }
+.three { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .form-grid { grid-template-columns: minmax(0, 1fr); } }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-weight: 600; font-size: 13px; }
+.field small { font-size: 12.5px; }
+.field input, .field select, .field textarea { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 8px 10px; min-height: 38px; }
+.field textarea { min-height: 76px; resize: vertical; }
+.field.check { flex-direction: row; align-items: center; gap: 10px; }
+.field.check input { width: 18px; height: 18px; min-height: 0; accent-color: var(--accent); }
+.form-error { margin: 12px 0 0; min-height: 1.4em; color: var(--bad); font-weight: 600; font-size: 14px; }
+.modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+
+/* Toast */
+.toast { position: fixed; z-index: 60; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: calc(100% - 32px); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 6px; font-size: 14px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .18s, transform .18s; }
+.toast.show { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>Dockside Training</h1>
+      <p class="sub">Staff sessions, bookings and attendance in one place.</p>
+    </div>
+    <div class="who" id="who"></div>
+  </header>
+  <div class="ruler" aria-hidden="true"></div>
+  <div class="bar-row" id="bar"></div>
+  <div class="filters" id="filters" role="group" aria-label="Filter by category"></div>
+  <main id="view"></main>
+</div>
+<div id="modal-root"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CATS = [
+    { id: 'safety', label: 'Safety & equipment', v: '--c-safety' },
+    { id: 'rescue', label: 'First aid & rescue', v: '--c-rescue' },
+    { id: 'fire', label: 'Fire & emergency', v: '--c-fire' },
+    { id: 'systems', label: 'Systems & IT', v: '--c-systems' },
+    { id: 'environment', label: 'Environment', v: '--c-env' },
+    { id: 'induction', label: 'Induction & service', v: '--c-induction' }
+  ];
+  var CAT = {};
+  CATS.forEach(function (c) { CAT[c.id] = c; });
+  function catOf(id) { return CAT[id] || CAT.induction; }
+  function catVar(s) { return 'var(' + catOf(s.category).v + ')'; }
+
+  var RE_DATE = /^\d{4}-\d{2}-\d{2}$/;
+  var RE_TIME = /^\d{2}:\d{2}$/;
+  var STATUSES = ['going', 'attended', 'absent'];
+
+  /* ---------- dates ---------- */
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function fromYmd(s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function todayYmd() { return ymd(new Date()); }
+  function addDays(s, n) { var d = fromYmd(s); d.setDate(d.getDate() + n); return ymd(d); }
+  function atMs(date, time) {
+    var p = date.split('-').map(Number), t = time.split(':').map(Number);
+    return new Date(p[0], p[1] - 1, p[2], t[0], t[1]).getTime();
+  }
+  function startMs(s) { return atMs(s.date, s.start); }
+  function endMs(s) { return atMs(s.date, s.end); }
+  function byStart(a, b) { return startMs(a) - startMs(b) || a.title.localeCompare(b.title); }
+  var fmtDay = new Intl.DateTimeFormat('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' });
+  var fmtLong = new Intl.DateTimeFormat('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' });
+  var fmtMonth = new Intl.DateTimeFormat('en-NZ', { month: 'long', year: 'numeric' });
+
+  /* ---------- state ---------- */
+  var now0 = new Date();
+  var state = {
+    view: 'month',
+    month: { y: now0.getFullYear(), m: now0.getMonth() },
+    selected: todayYmd(),
+    filter: new Set(),
+    expanded: new Set(),
+    confirmDelete: null,
+    showPast: false,
+    sessions: [],
+    signups: [],
+    bySession: new Map(),
+    loaded: { sessions: false, signups: false },
+    dbAvailable: null,
+    error: '',
+    me: { id: null, name: '', admin: false, canWrite: null },
+    names: {},
+    asked: new Set(),
+    db: null, userNs: null, dl: null,
+    lastFocus: null
+  };
+
+  /* ---------- tiny DOM helper (user text only ever goes through text nodes) ---------- */
+  function h(tag, props) {
+    var el = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach(function (k) {
+        var v = props[k];
+        if (v == null || v === false) return;
+        if (k === 'class') el.className = v;
+        else if (k === 'style') Object.keys(v).forEach(function (p) { el.style.setProperty(p, v[p]); });
+        else if (k.indexOf('on') === 0) el.addEventListener(k.slice(2).toLowerCase(), v);
+        else if (v === true) el.setAttribute(k, '');
+        else el.setAttribute(k, v);
+      });
+    }
+    var kids = Array.prototype.slice.call(arguments, 2);
+    (function add(list) {
+      list.forEach(function (kid) {
+        if (kid == null || kid === false) return;
+        if (Array.isArray(kid)) { add(kid); return; }
+        el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+      });
+    })(kids);
+    return el;
+  }
+  function $(id) { return document.getElementById(id); }
+
+  /* ---------- data cleaning (shared data is untrusted) ---------- */
+  function str(v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; }
+  function cleanSession(id, d) {
+    if (!d || typeof d.title !== 'string' || !RE_DATE.test(d.date || '')) return null;
+    var start = RE_TIME.test(d.start || '') ? d.start : '09:00';
+    var end = RE_TIME.test(d.end || '') ? d.end : start;
+    return {
+      id: id, title: d.title.slice(0, 120), category: CAT[d.category] ? d.category : 'induction',
+      date: d.date, start: start, end: end,
+      location: str(d.location, 120), trainer: str(d.trainer, 80), notes: str(d.notes, 600),
+      capacity: Math.max(0, Math.min(500, parseInt(d.capacity, 10) || 0)),
+      mandatory: d.mandatory === true, example: d.example === true
+    };
+  }
+  function cleanSignup(id, d) {
+    if (!d) return null;
+    var sid = str(d.sessionId, 200), uid = str(d.uid, 200);
+    if (!sid || !uid) return null;
+    return { id: id, sessionId: sid, uid: uid, status: STATUSES.indexOf(d.status) >= 0 ? d.status : 'going' };
+  }
+  function index() {
+    state.bySession = new Map();
+    state.signups.forEach(function (x) {
+      if (!state.bySession.has(x.sessionId)) state.bySession.set(x.sessionId, []);
+      state.bySession.get(x.sessionId).push(x);
+    });
+  }
+  function signupsOf(s) { return state.bySession.get(s.id) || []; }
+  function visible() {
+    return state.sessions.filter(function (s) { return state.filter.size === 0 || state.filter.has(s.category); });
+  }
+  function groupByDate(list) {
+    var m = Object.create(null);
+    list.slice().sort(byStart).forEach(function (s) { (m[s.date] = m[s.date] || []).push(s); });
+    return m;
+  }
+  function nameOf(uid) {
+    if (uid === state.me.id) return state.me.name || 'You';
+    return state.names[uid] || 'Colleague';
+  }
+
+  /* ---------- toast ---------- */
+  var toastTimer;
+  function toast(msg) {
+    var el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4200);
+  }
+
+  /* ---------- render scheduling ---------- */
+  var raf = 0;
+  function scheduleRender() {
+    if (raf) return;
+    raf = requestAnimationFrame(function () { raf = 0; render(); });
+  }
+  function render() {
+    var active = document.activeElement;
+    var fk = active && active.dataset ? active.dataset.fk : null;
+    index();
+    resolveNames();
+    renderWho(); renderBar(); renderFilters();
+    var view = state.view === 'agenda' ? agendaView() : state.view === 'mine' ? mineView() : monthView();
+    $('view').replaceChildren(view);
+    if (fk) {
+      var el = Array.prototype.find.call(document.querySelectorAll('[data-fk]'), function (e) { return e.dataset.fk === fk; });
+      if (el) el.focus({ preventScroll: true });
+    }
+  }
+
+  function resolveNames() {
+    if (!state.userNs) return;
+    var need = [];
+    state.signups.forEach(function (x) {
+      if (x.uid !== state.me.id && !state.asked.has(x.uid) && need.indexOf(x.uid) < 0) need.push(x.uid);
+    });
+    if (!need.length) return;
+    need.forEach(function (u) { state.asked.add(u); });
+    state.userNs.profiles(need).then(function (ps) {
+      var changed = false;
+      need.forEach(function (u) {
+        var n = (ps && ps[u] && ps[u].name) || '';
+        if (n !== state.names[u]) { state.names[u] = n; changed = true; }
+      });
+      if (changed) scheduleRender();
+    }).catch(function () {});
+  }
+
+  /* ---------- header, tabs, filters ---------- */
+  function renderWho() {
+    var kids = [];
+    if (state.me.id) {
+      kids.push(h('span', { class: 'who-name' }, state.me.name || 'Signed in'));
+      if (state.me.admin) kids.push(h('span', { class: 'tag tag-accent' }, 'Manages sessions'));
+    } else {
+      kids.push(h('span', { class: 'who-name muted' }, 'View only'));
+    }
+    $('who').replaceChildren.apply($('who'), kids);
+  }
+
+  function renderBar() {
+    var tabs = [['month', 'Month'], ['agenda', 'Agenda'], ['mine', 'My training']];
+    var left = h('div', { class: 'tabs', role: 'tablist', 'aria-label': 'Calendar views' },
+      tabs.map(function (t) {
+        return h('button', {
+          class: 'tab', role: 'tab', 'aria-selected': String(state.view === t[0]), 'data-fk': 'tab-' + t[0],
+          onclick: function () { state.view = t[0]; render(); }
+        }, t[1]);
+      }));
+    var right = h('div', { class: 'actions' });
+    if (state.me.admin && state.db) {
+      right.append(
+        h('button', { class: 'btn primary', 'data-fk': 'add', onclick: function () { openForm(null); } }, 'Add session'),
+        h('button', { class: 'btn', 'data-fk': 'csv', onclick: exportCsv }, 'Download attendance')
+      );
+    }
+    $('bar').replaceChildren(left, right);
+  }
+
+  function renderFilters() {
+    var box = $('filters');
+    box.hidden = state.view === 'mine';
+    var chips = [h('button', {
+      class: 'fchip', 'aria-pressed': String(state.filter.size === 0), 'data-fk': 'f-all',
+      onclick: function () { state.filter.clear(); render(); }
+    }, 'All')];
+    CATS.forEach(function (c) {
+      chips.push(h('button', {
+        class: 'fchip', 'aria-pressed': String(state.filter.has(c.id)), 'data-fk': 'f-' + c.id,
+        style: { '--cat': 'var(' + c.v + ')' },
+        onclick: function () {
+          if (state.filter.has(c.id)) state.filter.delete(c.id); else state.filter.add(c.id);
+          render();
+        }
+      }, h('span', { class: 'sw', 'aria-hidden': 'true' }), c.label));
+    });
+    box.replaceChildren.apply(box, chips);
+  }
+
+  /* ---------- notices ---------- */
+  function notices() {
+    var out = [];
+    var admin = state.me.admin && state.db;
+    if (state.dbAvailable === false) {
+      out.push(h('div', { class: 'note' }, 'Live sessions are not available in this view. Open the calendar from its Claude link while signed in.'));
+    } else if (state.error) {
+      out.push(h('div', { class: 'note' }, state.error));
+    } else if (state.dbAvailable === null || (state.dbAvailable && !(state.loaded.sessions && state.loaded.signups))) {
+      out.push(h('div', { class: 'note muted' }, 'Loading sessions…'));
+    } else if (!state.sessions.length) {
+      out.push(h('div', { class: 'empty' },
+        h('h3', null, 'No training sessions yet'),
+        h('p', { class: 'muted' }, admin
+          ? 'Add the first session, or load a few example sessions to see how bookings and attendance work. Examples can be removed in one click.'
+          : 'Sessions will show up here as soon as your trainer adds them.'),
+        admin && h('div', { class: 'actions' },
+          h('button', { class: 'btn primary', 'data-fk': 'add-empty', onclick: function () { openForm(null); } }, 'Add a session'),
+          h('button', { class: 'btn', 'data-fk': 'add-examples', onclick: addExamples }, 'Load example sessions'))));
+    }
+    if (state.sessions.some(function (s) { return s.example; })) {
+      out.push(h('div', { class: 'note' },
+        h('span', null, 'Example sessions are showing.'),
+        admin && h('button', { class: 'btn small', 'data-fk': 'rm-examples', onclick: removeExamples }, 'Remove examples')));
+    }
+    return out;
+  }
+
+  /* ---------- month view ---------- */
+  function chip(s) {
+    return h('span', { class: 'chip', style: { '--cat': catVar(s) } },
+      h('span', { class: 'tm' }, s.start),
+      h('span', { class: 't' }, s.title),
+      s.mandatory && h('span', { class: 'chip-req' }, 'REQ'));
+  }
+  function shiftMonth(n) {
+    var d = new Date(state.month.y, state.month.m + n, 1);
+    state.month = { y: d.getFullYear(), m: d.getMonth() };
+    var sd = fromYmd(state.selected);
+    if (sd.getFullYear() !== d.getFullYear() || sd.getMonth() !== d.getMonth()) {
+      var t = new Date();
+      state.selected = (t.getFullYear() === d.getFullYear() && t.getMonth() === d.getMonth()) ? todayYmd() : ymd(d);
+    }
+    render();
+  }
+  function goToday() {
+    var t = new Date();
+    state.month = { y: t.getFullYear(), m: t.getMonth() };
+    state.selected = todayYmd();
+    render();
+  }
+  function selectDay(key) {
+    var d = fromYmd(key);
+    state.selected = key;
+    state.month = { y: d.getFullYear(), m: d.getMonth() };
+    render();
+  }
+
+  function monthView() {
+    var y = state.month.y, m = state.month.m;
+    var first = new Date(y, m, 1);
+    var off = (first.getDay() + 6) % 7;
+    var dim = new Date(y, m + 1, 0).getDate();
+    var rows = Math.ceil((off + dim) / 7);
+    var by = groupByDate(visible());
+    var today = todayYmd();
+
+    function nav(label, aria, fn, fk) {
+      return h('button', { class: 'btn small', 'aria-label': aria, 'data-fk': fk, onclick: fn }, label);
+    }
+    var head = h('div', { class: 'cal-head' },
+      h('h2', { class: 'month-label' }, fmtMonth.format(first)),
+      h('div', { class: 'cal-nav' },
+        nav('←', 'Previous month', function () { shiftMonth(-1); }, 'prev'),
+        nav('Today', 'Go to today', goToday, 'today'),
+        nav('→', 'Next month', function () { shiftMonth(1); }, 'next')));
+    var dow = h('div', { class: 'dow', 'aria-hidden': 'true' },
+      ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d) { return h('span', null, d); }));
+    var grid = h('div', { class: 'grid' });
+    for (var i = 0; i < rows * 7; i++) {
+      (function (i) {
+        var d = new Date(y, m, 1 - off + i), key = ymd(d), list = by[key] || [];
+        var cell = h('button', {
+          class: 'cell' + (d.getMonth() === m ? '' : ' out') + (key === today ? ' today' : '') + (key === state.selected ? ' sel' : ''),
+          'aria-label': fmtDay.format(d) + ', ' + list.length + (list.length === 1 ? ' session' : ' sessions'),
+          'aria-pressed': String(key === state.selected), 'data-fk': 'd-' + key,
+          onclick: function () { selectDay(key); }
+        });
+        cell.append(h('span', { class: 'num' }, String(d.getDate())));
+        var chips = h('div', { class: 'chips' });
+        list.slice(0, 2).forEach(function (s) { chips.append(chip(s)); });
+        if (list.length > 2) chips.append(h('span', { class: 'more' }, '+' + (list.length - 2) + ' more'));
+        var dots = h('div', { class: 'dots', 'aria-hidden': 'true' });
+        list.slice(0, 6).forEach(function (s) { dots.append(h('span', { class: 'dot', style: { '--cat': catVar(s) } })); });
+        cell.append(chips, dots);
+        grid.append(cell);
+      })(i);
+    }
+
+    var sel = state.selected, list = by[sel] || [];
+    var sheet = h('aside', { class: 'sheet', 'aria-label': 'Sessions on the selected day' });
+    sheet.append(h('div', { class: 'sheet-head' },
+      h('h3', { class: 'sheet-title' }, fmtLong.format(fromYmd(sel))),
+      sel === today && h('span', { class: 'tag tag-accent' }, 'Today')));
+    if (!list.length) {
+      sheet.append(h('p', { class: 'muted' }, 'No sessions on this day.'));
+      if (state.me.admin && state.db) {
+        sheet.append(h('button', { class: 'btn', 'data-fk': 'add-day', onclick: function () { openForm(null); } }, 'Add a session here'));
+      }
+    } else {
+      list.forEach(function (s) { sheet.append(sessionCard(s, { showDate: false })); });
+    }
+    return h('div', null, notices(), h('div', { class: 'cal-layout' }, h('section', null, head, dow, grid), sheet));
+  }
+
+  /* ---------- agenda view ---------- */
+  function agendaView() {
+    var root = h('div', null, notices());
+    var wrap = h('div', { class: 'agenda' });
+    var vis = visible(), nowT = Date.now();
+    var up = vis.filter(function (s) { return endMs(s) >= nowT; }).sort(byStart);
+    var past = vis.filter(function (s) { return endMs(s) < nowT; }).sort(function (a, b) { return byStart(b, a); });
+    var today = todayYmd();
+
+    if (!up.length && state.sessions.length) {
+      wrap.append(h('p', { class: 'muted pad' }, 'Nothing coming up' + (state.filter.size ? ' in these categories' : '') + '.'));
+    }
+    var lastMonth = '', group = null, lastDate = '';
+    up.forEach(function (s) {
+      var mk = s.date.slice(0, 7);
+      if (mk !== lastMonth) {
+        lastMonth = mk;
+        wrap.append(h('h2', { class: 'month-div' }, fmtMonth.format(fromYmd(s.date))));
+      }
+      if (s.date !== lastDate) {
+        lastDate = s.date;
+        group = h('section', { class: 'day-group' },
+          h('h3', { class: 'day-h' }, fmtLong.format(fromYmd(s.date)), s.date === today && h('span', { class: 'tag tag-accent' }, 'Today')));
+        group.append(h('div', { class: 'cards' }));
+        wrap.append(group);
+      }
+      group.lastChild.append(sessionCard(s, { showDate: false }));
+    });
+    if (past.length) {
+      wrap.append(h('div', null, h('button', {
+        class: 'btn', 'data-fk': 'toggle-past', 'aria-expanded': String(state.showPast),
+        onclick: function () { state.showPast = !state.showPast; render(); }
+      }, (state.showPast ? 'Hide' : 'Show') + ' earlier sessions (' + past.length + ')')));
+      if (state.showPast) {
+        var c = h('div', { class: 'cards' });
+        past.forEach(function (s) { c.append(sessionCard(s, { showDate: true })); });
+        wrap.append(h('section', null, h('h2', { class: 'sec-h' }, 'Earlier sessions'), c));
+      }
+    }
+    root.append(wrap);
+    return root;
+  }
+
+  /* ---------- my training ---------- */
+  function mineView() {
+    var root = h('div', null, notices());
+    if (!state.me.id || !state.db) {
+      root.append(h('p', { class: 'muted pad' }, 'Sign in to Claude to see your own sessions and attendance.'));
+      return root;
+    }
+    var mySu = new Map();
+    state.signups.forEach(function (x) { if (x.uid === state.me.id) mySu.set(x.sessionId, x); });
+    var nowT = Date.now();
+    var started = function (s) { return startMs(s) <= nowT; };
+    var booked = state.sessions.filter(function (s) { return mySu.has(s.id) && !started(s); }).sort(byStart);
+    var history = state.sessions.filter(function (s) { return mySu.has(s.id) && started(s); }).sort(function (a, b) { return byStart(b, a); });
+    var needs = state.sessions.filter(function (s) { return s.mandatory && !started(s) && !mySu.has(s.id); }).sort(byStart);
+    var attended = history.filter(function (s) { return mySu.get(s.id).status === 'attended'; }).length;
+
+    var wrap = h('div', { class: 'mine' });
+    wrap.append(h('div', { class: 'stats' },
+      h('div', { class: 'stat' }, h('b', null, String(attended)), h('span', null, 'Sessions attended')),
+      h('div', { class: 'stat' }, h('b', null, String(booked.length)), h('span', null, 'Booked and coming up')),
+      h('div', { class: 'stat' }, h('b', null, String(needs.length)), h('span', null, 'Required, not yet booked'))));
+
+    function section(title, list, empty) {
+      var c = h('div', { class: 'cards' });
+      list.forEach(function (s) { c.append(sessionCard(s, { showDate: true })); });
+      return h('section', null, h('h2', { class: 'sec-h' }, title), list.length ? c : h('p', { class: 'muted' }, empty));
+    }
+    if (needs.length) wrap.append(section('Required sessions to book', needs, ''));
+    wrap.append(section('Your upcoming sessions', booked, 'You have nothing booked. Pick a session from the Month or Agenda view.'));
+    wrap.append(section('Your history', history, 'Sessions you have attended will be listed here.'));
+    root.append(wrap);
+    return root;
+  }
+
+  /* ---------- session card ---------- */
+  function statusPill(status, ended) {
+    if (status === 'attended') return h('span', { class: 'pill pill-ok' }, 'Attended');
+    if (status === 'absent') return h('span', { class: 'pill pill-bad' }, 'Absent');
+    return ended ? h('span', { class: 'pill pill-muted' }, 'Not recorded') : h('span', { class: 'pill pill-accent' }, 'Booked');
+  }
+
+  function sessionCard(s, opts) {
+    var su = signupsOf(s);
+    var mine = state.me.id ? su.filter(function (x) { return x.uid === state.me.id; })[0] : null;
+    var nowT = Date.now();
+    var started = startMs(s) <= nowT, ended = endMs(s) < nowT;
+    var cap = s.capacity, full = cap > 0 && su.length >= cap;
+    var cat = catOf(s.category);
+    var open = state.expanded.has(s.id);
+    var admin = state.me.admin && state.db;
+
+    var card = h('article', { class: 'sess' + (ended ? ' past' : ''), style: { '--cat': catVar(s) } });
+    card.append(h('div', { class: 'sess-top' },
+      h('span', { class: 'cat' }, h('span', { class: 'sw', 'aria-hidden': 'true' }), cat.label),
+      s.mandatory && h('span', { class: 'tag tag-req' }, 'Required'),
+      s.example && h('span', { class: 'tag' }, 'Example')));
+    card.append(h('h3', { class: 'sess-title' }, s.title));
+    var when = (opts.showDate ? fmtDay.format(fromYmd(s.date)) + ' · ' : '') + s.start + '–' + s.end;
+    card.append(h('ul', { class: 'meta' },
+      h('li', { class: 'mono' }, when),
+      s.location && h('li', null, s.location),
+      s.trainer && h('li', null, 'Trainer: ' + s.trainer)));
+    if (s.notes) card.append(h('p', { class: 'sess-notes' }, s.notes));
+
+    var capText = cap > 0 ? su.length + ' of ' + cap + ' places taken' : su.length + ' booked';
+    card.append(h('div', { class: 'capline' },
+      h('span', { class: full ? 'full' : '' }, full ? 'Full · ' + capText : capText),
+      cap > 0 && h('span', { class: 'meter', 'aria-hidden': 'true' }, h('i', { style: { width: Math.min(100, Math.round(su.length / cap * 100)) + '%' } }))));
+
+    var act = h('div', { class: 'sess-actions' });
+    if (!started) {
+      if (mine) {
+        act.append(h('span', { class: 'pill pill-accent' }, "You're booked"),
+          h('button', { class: 'btn', 'data-fk': 'wd-' + s.id, onclick: function () { withdraw(s, mine); } }, 'Withdraw'));
+      } else if (!state.me.id || !state.db) {
+        act.append(h('span', { class: 'hint' }, 'Sign in to book a place.'));
+      } else if (state.me.canWrite === false) {
+        act.append(h('span', { class: 'hint' }, 'You have view-only access. Ask for Contributor access to book.'));
+      } else if (full) {
+        act.append(h('span', { class: 'pill pill-bad' }, 'Full'));
+      } else {
+        act.append(h('button', { class: 'btn primary', 'data-fk': 'su-' + s.id, onclick: function () { signUp(s); } }, 'Book a place'));
+      }
+    } else if (mine) {
+      act.append(statusPill(mine.status, ended));
+    } else {
+      act.append(h('span', { class: 'hint' }, ended ? 'Session finished' : 'In progress'));
+    }
+    act.append(h('button', {
+      class: 'btn quiet', 'aria-expanded': String(open), 'data-fk': 'ro-' + s.id,
+      onclick: function () { if (open) state.expanded.delete(s.id); else state.expanded.add(s.id); render(); }
+    }, (open ? 'Hide' : "Who's going") + ' (' + su.length + ')'));
+    if (admin) {
+      act.append(h('button', { class: 'btn quiet', 'data-fk': 'ed-' + s.id, onclick: function () { openForm(s); } }, 'Edit'),
+        h('button', { class: 'btn quiet', 'data-fk': 'del-' + s.id, onclick: function () { state.confirmDelete = s.id; render(); } }, 'Delete'));
+    }
+    card.append(act);
+
+    if (admin && state.confirmDelete === s.id) {
+      card.append(h('div', { class: 'confirm' },
+        h('p', null, 'Delete this session' + (su.length ? ' and its ' + su.length + (su.length === 1 ? ' booking' : ' bookings') : '') + '? This cannot be undone.'),
+        h('button', { class: 'btn danger small', 'data-fk': 'del-yes-' + s.id, onclick: function () { deleteSession(s); } }, 'Delete session'),
+        h('button', { class: 'btn small', 'data-fk': 'del-no-' + s.id, onclick: function () { state.confirmDelete = null; render(); } }, 'Keep it')));
+    }
+
+    if (open) {
+      var people = su.map(function (x) { return { x: x, name: nameOf(x.uid) }; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name); });
+      var list = h('ul', { class: 'roster' });
+      if (!people.length) list.append(h('li', { class: 'rrow muted' }, 'No one has booked yet.'));
+      people.forEach(function (p) {
+        var isMe = p.x.uid === state.me.id;
+        var li = h('li', { class: 'rrow' },
+          h('span', { class: 'rname' }, p.name + (isMe && state.me.name ? ' (you)' : '')),
+          statusPill(p.x.status, ended));
+        if (admin && started) {
+          li.append(h('span', { class: 'mark' },
+            markBtn(p.x, 'attended', 'Attended'), markBtn(p.x, 'absent', 'Absent')));
+        }
+        list.append(li);
+      });
+      card.append(list);
+    }
+    return card;
+  }
+
+  function markBtn(x, status, label) {
+    return h('button', {
+      class: 'btn small', 'aria-pressed': String(x.status === status), 'data-fk': 'mk-' + x.id + '-' + status,
+      onclick: function () { markStatus(x, status); }
+    }, label);
+  }
+
+  /* ---------- actions ---------- */
+  async function signUp(s) {
+    if (!state.db || !state.me.id) return;
+    var su = signupsOf(s);
+    if (s.capacity > 0 && su.length >= s.capacity) { toast('Sorry, that session just filled up.'); return; }
+    try {
+      await state.db.doc('signups/' + s.id + '_' + state.me.id).set({
+        sessionId: s.id, uid: state.me.id, status: 'going', at: new Date().toISOString()
+      });
+      toast("You're booked for " + s.title + '.');
+    } catch (e) {
+      toast('Could not book your place. Check your access and try again.');
+    }
+  }
+  async function withdraw(s, mine) {
+    try {
+      await state.db.doc('signups/' + mine.id).delete();
+      toast('Your booking was removed.');
+    } catch (e) { toast('Could not remove your booking. Try again.'); }
+  }
+  async function markStatus(x, status) {
+    var next = x.status === status ? 'going' : status;
+    try { await state.db.doc('signups/' + x.id).update({ status: next }); }
+    catch (e) { toast('Could not save attendance. Try again.'); }
+  }
+  async function deleteSession(s) {
+    try {
+      var su = signupsOf(s);
+      for (var i = 0; i < su.length; i++) await state.db.doc('signups/' + su[i].id).delete();
+      await state.db.doc('sessions/' + s.id).delete();
+      state.confirmDelete = null;
+      toast('Session deleted.');
+    } catch (e) { toast('Could not delete the session. Try again.'); }
+  }
+  async function addExamples() {
+    var t = todayYmd();
+    var mk = function (off, o) { return Object.assign({ date: addDays(t, off), example: true, notes: '' }, o); };
+    var list = [
+      mk(-4, { title: 'Manual handling toolbox talk', category: 'safety', start: '09:00', end: '09:30', location: 'Staff room', trainer: 'Site safety lead', capacity: 0, mandatory: false }),
+      mk(3, { title: 'Travelift and hardstand safety', category: 'safety', start: '08:00', end: '10:00', location: 'Hardstand', trainer: 'Operations lead', capacity: 6, mandatory: true, notes: 'Wear boots and a hi-vis vest.' }),
+      mk(6, { title: 'First aid refresher', category: 'rescue', start: '08:30', end: '16:30', location: 'Training room', trainer: 'External provider', capacity: 12, mandatory: true }),
+      mk(9, { title: 'Fire warden and evacuation drill', category: 'fire', start: '10:00', end: '11:00', location: 'All sites', trainer: 'Chief fire warden', capacity: 0, mandatory: true }),
+      mk(13, { title: 'Fuel and oil spill response', category: 'environment', start: '13:00', end: '15:00', location: 'Fuel dock', trainer: 'Environment officer', capacity: 10, mandatory: false }),
+      mk(16, { title: 'Phishing and password basics', category: 'systems', start: '14:00', end: '14:45', location: 'Online', trainer: 'Systems team', capacity: 0, mandatory: false }),
+      mk(20, { title: 'New starter induction', category: 'induction', start: '09:00', end: '12:00', location: 'Marina office', trainer: 'Team leader', capacity: 8, mandatory: false })
+    ];
+    try {
+      for (var i = 0; i < list.length; i++) await state.db.collection('sessions').add(list[i]);
+      toast('Added ' + list.length + ' example sessions.');
+    } catch (e) { toast('Could not add the examples. Only editors can add sessions.'); }
+  }
+  async function removeExamples() {
+    try {
+      var ex = state.sessions.filter(function (s) { return s.example; });
+      for (var i = 0; i < ex.length; i++) {
+        var su = signupsOf(ex[i]);
+        for (var j = 0; j < su.length; j++) await state.db.doc('signups/' + su[j].id).delete();
+        await state.db.doc('sessions/' + ex[i].id).delete();
+      }
+      toast('Example sessions removed.');
+    } catch (e) { toast('Could not remove the examples. Try again.'); }
+  }
+
+  /* ---------- CSV export ---------- */
+  function csvCell(c) {
+    var t = String(c == null ? '' : c);
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+    return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+  async function exportCsv() {
+    if (!state.dl) { toast('Downloads are not available in this view.'); return; }
+    var uids = [];
+    state.signups.forEach(function (x) { if (uids.indexOf(x.uid) < 0) uids.push(x.uid); });
+    var names = {};
+    if (state.userNs && uids.length) {
+      try {
+        var ps = await state.userNs.profiles(uids);
+        uids.forEach(function (u) { names[u] = (ps[u] && ps[u].name) || ''; });
+      } catch (e) { /* names stay blank */ }
+    }
+    var label = { going: 'Booked', attended: 'Attended', absent: 'Absent' };
+    var rows = [['Date', 'Start', 'End', 'Session', 'Category', 'Required', 'Person', 'Status']];
+    state.sessions.slice().sort(byStart).forEach(function (s) {
+      var su = signupsOf(s), base = [s.date, s.start, s.end, s.title, catOf(s.category).label, s.mandatory ? 'Yes' : 'No'];
+      if (!su.length) { rows.push(base.concat(['', 'No bookings'])); return; }
+      su.forEach(function (x) { rows.push(base.concat([names[x.uid] || '(name not available)', label[x.status]])); });
+    });
+    var csv = '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
+    try {
+      await state.dl.save({ filename: 'dockside-training-attendance-' + todayYmd() + '.csv', data: csv });
+      toast('Attendance file saved.');
+    } catch (e) {
+      toast(e && e.code === 'declined' ? 'Download cancelled.' : 'Could not save the file.');
+    }
+  }
+
+  /* ---------- add / edit form ---------- */
+  var escHandler = null;
+  function closeModal() {
+    $('modal-root').replaceChildren();
+    if (escHandler) { document.removeEventListener('keydown', escHandler); escHandler = null; }
+    var f = state.lastFocus;
+    if (f && document.contains(f)) f.focus();
+    else { var a = document.querySelector('[data-fk="add"]'); if (a) a.focus(); }
+  }
+
+  function openForm(session) {
+    if (!state.db) return;
+    state.lastFocus = document.activeElement;
+    var edit = !!session, today = todayYmd();
+    var v = session || {
+      title: '', category: 'safety', date: state.selected >= today ? state.selected : today,
+      start: '09:00', end: '10:00', location: '', trainer: '', capacity: 0, mandatory: false, notes: ''
+    };
+    function fld(id, label, control, hint, cls) {
+      return h('div', { class: 'field' + (cls ? ' ' + cls : '') }, h('label', { for: id }, label), control, hint && h('small', { class: 'muted' }, hint));
+    }
+    var title = h('input', { id: 'f-title', type: 'text', maxlength: '120', value: v.title, autocomplete: 'off' });
+    var cat = h('select', { id: 'f-cat' }, CATS.map(function (c) { return h('option', { value: c.id, selected: c.id === v.category }, c.label); }));
+    var date = h('input', { id: 'f-date', type: 'date', value: v.date });
+    var start = h('input', { id: 'f-start', type: 'time', value: v.start });
+    var end = h('input', { id: 'f-end', type: 'time', value: v.end });
+    var loc = h('input', { id: 'f-loc', type: 'text', maxlength: '120', value: v.location, placeholder: 'e.g. Staff room' });
+    var trainer = h('input', { id: 'f-trainer', type: 'text', maxlength: '80', value: v.trainer, placeholder: 'Who is running it' });
+    var cap = h('input', { id: 'f-cap', type: 'number', min: '0', max: '500', step: '1', value: v.capacity ? String(v.capacity) : '', placeholder: 'No limit' });
+    var req = h('input', { id: 'f-req', type: 'checkbox', checked: v.mandatory });
+    var notes = h('textarea', { id: 'f-notes', maxlength: '600', placeholder: 'What to bring, prerequisites, anything staff should know' }, v.notes);
+    var rep = h('select', { id: 'f-rep' },
+      h('option', { value: 'none' }, 'Does not repeat'),
+      h('option', { value: '7' }, 'Every week'),
+      h('option', { value: '14' }, 'Every fortnight'));
+    var cnt = h('input', { id: 'f-cnt', type: 'number', min: '2', max: '26', step: '1', value: '4' });
+    var cntField = fld('f-cnt', 'Number of sessions', cnt, 'Including the first one.');
+    cntField.hidden = true;
+    rep.addEventListener('change', function () { cntField.hidden = rep.value === 'none'; });
+
+    var err = h('p', { class: 'form-error', id: 'f-err', role: 'alert' });
+    var saveBtn = h('button', { class: 'btn primary', type: 'submit' }, edit ? 'Save changes' : 'Add session');
+    var cancelBtn = h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Cancel');
+
+    var form = h('form', { novalidate: true, 'aria-labelledby': 'm-title' },
+      h('h2', { id: 'm-title', class: 'modal-title' }, edit ? 'Edit session' : 'Add a session'),
+      h('div', { class: 'form-grid' },
+        fld('f-title', 'Session title', title, null, 'span2'),
+        fld('f-cat', 'Category', cat),
+        fld('f-loc', 'Location', loc),
+        h('div', { class: 'three span2' }, fld('f-date', 'Date', date), fld('f-start', 'Starts', start), fld('f-end', 'Ends', end)),
+        fld('f-trainer', 'Trainer', trainer),
+        fld('f-cap', 'Places', cap, 'Leave empty for no limit.'),
+        fld('f-notes', 'Notes', notes, null, 'span2'),
+        h('div', { class: 'field check span2' }, req, h('label', { for: 'f-req' }, 'Required for all staff')),
+        !edit && fld('f-rep', 'Repeat', rep, null, 'span2'),
+        !edit && cntField),
+      err,
+      h('div', { class: 'modal-actions' }, cancelBtn, saveBtn));
+
+    function fail(msg, el) { err.textContent = msg; if (el) el.focus(); }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      err.textContent = '';
+      var t = title.value.trim();
+      if (!t) return fail('Give the session a title.', title);
+      if (!date.value) return fail('Choose a date.', date);
+      if (!start.value || !end.value) return fail('Set a start and end time.', start);
+      if (end.value <= start.value) return fail('The end time must be after the start time.', end);
+      var capN = cap.value === '' ? 0 : parseInt(cap.value, 10);
+      if (!Number.isInteger(capN) || capN < 0 || capN > 500) return fail('Places must be a whole number from 0 to 500. Leave it empty for no limit.', cap);
+      var count = 1, step = 0;
+      if (!edit && rep.value !== 'none') {
+        step = parseInt(rep.value, 10);
+        count = parseInt(cnt.value, 10);
+        if (!(count >= 2 && count <= 26)) return fail('Enter between 2 and 26 sessions.', cnt);
+      }
+      var data = {
+        title: t, category: cat.value, date: date.value, start: start.value, end: end.value,
+        location: loc.value.trim(), trainer: trainer.value.trim(), capacity: capN,
+        mandatory: req.checked, notes: notes.value.trim()
+      };
+      saveBtn.disabled = true;
+      try {
+        if (edit) {
+          await state.db.doc('sessions/' + session.id).update(data);
+          toast('Session updated.');
+        } else {
+          for (var i = 0; i < count; i++) {
+            await state.db.collection('sessions').add(Object.assign({}, data, { date: addDays(data.date, i * step) }));
+          }
+          toast(count > 1 ? 'Added ' + count + ' sessions.' : 'Session added.');
+          var d = fromYmd(data.date);
+          state.month = { y: d.getFullYear(), m: d.getMonth() };
+          state.selected = data.date;
+        }
+        closeModal();
+        render();
+      } catch (ex) {
+        saveBtn.disabled = false;
+        fail('Could not save. Only editors can change sessions. Check your access and try again.');
+      }
+    });
+
+    var panel = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'm-title' }, form);
+    panel.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var f = Array.prototype.filter.call(panel.querySelectorAll('button, input, select, textarea'), function (x) { return !x.disabled && x.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+    var overlay = h('div', { class: 'overlay' }, panel);
+    overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) closeModal(); });
+    escHandler = function (e) { if (e.key === 'Escape') closeModal(); };
+    document.addEventListener('keydown', escHandler);
+    $('modal-root').replaceChildren(overlay);
+    title.focus();
+  }
+
+  /* ---------- boot ---------- */
+  async function safeUse(name) {
+    try {
+      if (!window.claude || typeof window.claude.use !== 'function') return null;
+      return await window.claude.use(name);
+    } catch (e) { return null; }
+  }
+
+  async function init() {
+    render();
+    var res = await Promise.all([safeUse('db'), safeUse('user'), safeUse('downloads')]);
+    var db = res[0], user = res[1];
+    state.dl = res[2];
+    state.userNs = user;
+    if (user) {
+      try {
+        state.me.id = await user.id();
+        var me = await user.me();
+        state.me.name = me.name || '';
+        state.me.admin = await user.canEdit();
+        state.me.canWrite = await user.can('data.write');
+      } catch (e) { /* identity stays anonymous */ }
+    }
+    if (!db) { state.dbAvailable = false; render(); return; }
+    state.db = db;
+    state.dbAvailable = true;
+    function fail() { state.error = 'Live updates stopped. Reload the page to reconnect.'; scheduleRender(); }
+    db.collection('sessions').onSnapshot(function (snap) {
+      state.sessions = snap.docs.map(function (d) { return cleanSession(d.id, d.data()); }).filter(Boolean);
+      state.loaded.sessions = true;
+      scheduleRender();
+    }, fail);
+    db.collection('signups').onSnapshot(function (snap) {
+      state.signups = snap.docs.map(function (d) { return cleanSignup(d.id, d.data()); }).filter(Boolean);
+      state.loaded.signups = true;
+      scheduleRender();
+    }, fail);
+    render();
+  }
+  init();
+})();
+</script>

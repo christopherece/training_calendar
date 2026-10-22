@@ -1,0 +1,1672 @@
+<title>Training Register</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: a harbour chart. Ruler-ticked header, role-aware tab bar, tables and a staff-by-course matrix as the working surfaces. */
+:root {
+  --bg: #EDF3F3; --surface: #FFFFFF; --surface-2: #E3ECEC; --ink: #0D2230; --muted: #546B7A; --line: #CEDADB;
+  --accent: #0E7C7B; --accent-ink: #FFFFFF; --accent-soft: #D3EBEA;
+  --ok-bg: #D8EFE6; --ok-fg: #0F6B4F;
+  --t90-bg: #F4EBC4; --t90-fg: #6B5400;
+  --t60-bg: #FBDFC2; --t60-fg: #8F4300;
+  --t30-bg: #F6D2CC; --t30-fg: #9E2D22;
+  --exp-bg: #8F1D2C; --exp-fg: #FFFFFF;
+  --c-maritime: #2563B0; --c-radio: #6D4AC4; --c-env: #5F7F1F; --c-mach: #A86B00; --c-aid: #C23B2E; --c-other: #5B7080;
+  --font-display: 'Archivo', 'Arial Narrow', Arial, sans-serif;
+  --font-body: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #09181D; --surface: #0F262C; --surface-2: #163640; --ink: #E5F0F0; --muted: #8DA8AE; --line: #234650;
+    --accent: #4FD1C5; --accent-ink: #052B2A; --accent-soft: #11403F;
+    --ok-bg: #123A30; --ok-fg: #5ADBB0; --t90-bg: #3D3410; --t90-fg: #F0D56B; --t60-bg: #4A2A10; --t60-fg: #FFB56B;
+    --t30-bg: #4A1D18; --t30-fg: #FF9C8E; --exp-bg: #C23A49; --exp-fg: #FFFFFF;
+    --c-maritime: #7DB0F2; --c-radio: #AB92FF; --c-env: #A9CB54; --c-mach: #E3A93F; --c-aid: #FF8678; --c-other: #9DB3C0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #09181D; --surface: #0F262C; --surface-2: #163640; --ink: #E5F0F0; --muted: #8DA8AE; --line: #234650;
+  --accent: #4FD1C5; --accent-ink: #052B2A; --accent-soft: #11403F;
+  --ok-bg: #123A30; --ok-fg: #5ADBB0; --t90-bg: #3D3410; --t90-fg: #F0D56B; --t60-bg: #4A2A10; --t60-fg: #FFB56B;
+  --t30-bg: #4A1D18; --t30-fg: #FF9C8E; --exp-bg: #C23A49; --exp-fg: #FFFFFF;
+  --c-maritime: #7DB0F2; --c-radio: #AB92FF; --c-env: #A9CB54; --c-mach: #E3A93F; --c-aid: #FF8678; --c-other: #9DB3C0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); }
+.page { max-width: 1180px; margin: 0 auto; padding-block: 22px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* Header + nav */
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; }
+h1 { margin: 0; font-family: var(--font-display); font-stretch: 125%; font-weight: 800; font-size: clamp(28px, 6vw, 44px); line-height: 1; letter-spacing: -0.01em; }
+.sub { margin: 8px 0 0; color: var(--muted); max-width: 60ch; }
+.who { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+.who-name { font-weight: 600; }
+.ruler { height: 12px; margin-top: 16px; border-bottom: 1px solid var(--ink);
+  background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 40px) left bottom / 100% 12px no-repeat,
+              repeating-linear-gradient(90deg, var(--muted) 0 1px, transparent 1px 8px) left bottom / 100% 6px no-repeat; }
+.nav { display: flex; gap: 2px; overflow-x: auto; margin-top: 12px; border-bottom: 1px solid var(--line); scrollbar-width: thin; }
+.tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 9px 14px; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab:hover { color: var(--ink); }
+.badge { font: 500 11px var(--font-mono); background: var(--exp-bg); color: var(--exp-fg); border-radius: 999px; padding: 0 7px; line-height: 18px; }
+#view { margin-top: 18px; display: grid; gap: 18px; }
+
+/* Controls */
+.btn { background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 7px 14px; min-height: 38px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { background: var(--exp-bg); border-color: var(--exp-bg); color: var(--exp-fg); }
+.btn.quiet { border-color: transparent; background: none; color: var(--accent); padding-inline: 8px; }
+.btn.small { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.linkbtn { background: none; border: 0; padding: 0; font-weight: 600; color: var(--ink); cursor: pointer; text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.linkbtn:hover { text-decoration-color: var(--accent); color: var(--accent); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.row.between { justify-content: space-between; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fchip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
+.fchip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.sw { width: 9px; height: 9px; border-radius: 2px; background: var(--cat, var(--muted)); display: inline-block; flex: none; }
+.tag { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.accent { border-color: var(--accent); color: var(--accent); }
+.tag.dark { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Panels, notes */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; min-width: 0; }
+.panel h2, .sec-h { margin: 0 0 10px; font-family: var(--font-display); font-stretch: 108%; font-size: 18px; font-weight: 700; }
+.note { padding: 12px 16px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.note.alert { border-color: var(--t30-fg); background: var(--t30-bg); color: var(--t30-fg); }
+.empty { padding: 22px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; display: grid; gap: 10px; justify-items: start; }
+.empty h2 { margin: 0; font-family: var(--font-display); font-stretch: 112%; font-size: 22px; }
+.empty p { margin: 0; max-width: 60ch; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 960px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+
+/* Status pills / cells */
+.pill { display: inline-block; font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.st-current { background: var(--ok-bg); color: var(--ok-fg); }
+.st-90 { background: var(--t90-bg); color: var(--t90-fg); }
+.st-60 { background: var(--t60-bg); color: var(--t60-fg); }
+.st-30 { background: var(--t30-bg); color: var(--t30-fg); }
+.st-exp { background: var(--exp-bg); color: var(--exp-fg); }
+.st-prog { background: var(--accent-soft); color: var(--accent); }
+.st-sched { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.st-miss { background: transparent; color: var(--t30-fg); box-shadow: inset 0 0 0 1px var(--t30-fg); }
+.st-na { background: transparent; color: var(--muted); }
+
+/* Tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.tile { appearance: none; border: 0; text-align: left; background: var(--surface); padding: 14px 16px; cursor: pointer; display: grid; gap: 2px; }
+.tile:hover { background: var(--accent-soft); }
+.tile[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
+.tile b { font: 500 34px/1.05 var(--font-mono); }
+.tile span { font-size: 13px; color: var(--muted); }
+.tile.static { cursor: default; } .tile.static:hover { background: var(--surface); }
+.t-exp b { color: var(--exp-bg); } .t-30 b { color: var(--t30-fg); } .t-60 b { color: var(--t60-fg); } .t-90 b { color: var(--t90-fg); } .t-miss b { color: var(--t30-fg); } .t-ok b { color: var(--ok-fg); }
+:root[data-theme="dark"] .t-exp b { color: var(--t30-fg); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .t-exp b { color: var(--t30-fg); } }
+
+/* Tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; white-space: nowrap; background: var(--surface); border-bottom: 1px solid var(--line); }
+td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+tbody tr:first-child td { border-top: 0; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); }
+td .sub2 { display: block; font-size: 12.5px; color: var(--muted); }
+.cat { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.bar { height: 8px; min-width: 70px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ok-fg); }
+.bar.warn i { background: var(--t60-fg); } .bar.low i { background: var(--t30-fg); }
+.pctcell { display: flex; align-items: center; gap: 10px; min-width: 140px; }
+.pctcell .bar { flex: 1; }
+.pctcell b { font: 500 13px var(--font-mono); min-width: 38px; text-align: right; }
+
+/* Matrix */
+.mx { border-collapse: separate; border-spacing: 0; width: auto; }
+.mx th, .mx td { border: 0; padding: 0; }
+.mx thead th { vertical-align: bottom; padding: 8px 4px; text-transform: none; letter-spacing: 0; font: 500 12px var(--font-body); color: var(--ink); width: 92px; min-width: 92px; text-align: left; white-space: normal; }
+.mx thead th .sw { margin-bottom: 4px; display: block; width: 100%; height: 3px; border-radius: 0; }
+.mx .rowh { position: sticky; left: 0; z-index: 2; background: var(--surface); min-width: 170px; max-width: 170px; padding: 6px 12px; text-align: left; border-right: 1px solid var(--line); }
+.mx thead .rowh { z-index: 3; }
+.mx tbody td { padding: 3px; border-top: 1px solid var(--line); }
+.mx tbody tr:first-child td, .mx tbody tr:first-child th { border-top: 0; }
+.mx tbody th.rowh { border-top: 1px solid var(--line); font: 600 13px var(--font-body); text-transform: none; letter-spacing: 0; color: var(--ink); }
+.mx tbody tr:first-child th.rowh { border-top: 0; }
+.mc { appearance: none; border: 0; width: 100%; min-height: 46px; border-radius: 4px; display: grid; place-items: center; gap: 0; padding: 3px; font-weight: 600; font-size: 14px; line-height: 1.15; cursor: pointer; }
+.mc small { font: 400 10px var(--font-mono); opacity: .9; }
+.mc:hover { filter: brightness(.95); }
+.mc.static { cursor: default; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.legend span.pill { font-size: 11.5px; padding: 1px 8px; }
+
+/* Calendar */
+.cal-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+.month-label { margin: 0; font-family: var(--font-display); font-stretch: 112%; font-weight: 700; font-size: 24px; }
+.dow, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.dow span { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 4px 6px; }
+.grid { gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.cell { appearance: none; border: 0; margin: 0; text-align: left; background: var(--surface); padding: 6px; min-height: 100px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; min-width: 0; position: relative; }
+.cell:hover { background: var(--accent-soft); }
+.cell.out { background: var(--surface-2); color: var(--muted); }
+.cell.sel { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 1; }
+.num2 { appearance: none; border: 0; background: none; padding: 0; color: inherit; cursor: pointer; font: 500 13px var(--font-mono); align-self: flex-start; }
+.cell.today .num2 { background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 0 7px; }
+.evs { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ev { display: block; min-width: 0; font-size: 11px; line-height: 1.35; padding: 2px 5px; border-radius: 3px; background: var(--surface-2); background: color-mix(in srgb, var(--evc) 16%, var(--surface)); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ev-sched { --evc: var(--accent); } .ev-done { --evc: var(--ok-fg); } .ev-exp { --evc: var(--t30-fg); } .ev-plan { --evc: var(--c-radio); }
+.ev.done { text-decoration: line-through; opacity: .7; }
+.ev[draggable="true"], .evrow[draggable="true"] { cursor: grab; }
+.cell.drop, .ycard.drop, .yr-strip.drop { background: var(--accent-soft); outline: 2px dashed var(--accent); outline-offset: -2px; }
+.ycards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+.ycard { display: grid; gap: 8px; align-content: start; }
+.ycard .ev { white-space: normal; }
+.plan-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; }
+.more { font-size: 11px; color: var(--muted); padding-left: 5px; }
+.dots { display: none; gap: 3px; flex-wrap: wrap; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--evc); }
+@media (max-width: 640px) { .evs { display: none; } .dots { display: flex; } .cell { min-height: 58px; padding: 4px; } .dow span { padding-inline: 2px; text-align: center; } }
+.evrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.evrow:first-of-type { border-top: 0; }
+.evrow .ico { font-family: var(--font-mono); font-weight: 500; color: var(--evc); width: 1.4em; }
+.evrow .grow { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+
+/* Profile */
+.p-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.p-name { margin: 0; font-family: var(--font-display); font-stretch: 118%; font-weight: 800; font-size: clamp(24px, 4vw, 32px); line-height: 1.1; overflow-wrap: anywhere; }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 20px; margin-top: 14px; }
+.kv div { min-width: 0; } .kv dt { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); } .kv dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.doclist { list-style: none; margin: 0; padding: 0; display: grid; }
+.doclist li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.doclist li:first-child { border-top: 0; }
+.doclist .grow { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.doclist a { color: var(--accent); font-weight: 600; }
+.confirm { padding: 10px 12px; background: var(--t30-bg); color: var(--t30-fg); border-radius: 5px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13.5px; }
+.confirm p { margin: 0; flex: 1 1 220px; }
+
+/* Reminders */
+.rem { display: grid; gap: 0; }
+.rem-person { padding: 14px 0; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+.rem-person:first-child { border-top: 0; }
+.rem-item { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 14px; }
+.rem-item .grow { flex: 1 1 220px; min-width: 0; }
+
+/* Forms + modal */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(4, 14, 18, .62); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.modal { width: 100%; max-width: 600px; margin-block: 3vh; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
+.modal.wide { max-width: 780px; }
+.modal-title { margin: 0 0 14px; font-family: var(--font-display); font-stretch: 112%; font-size: 22px; font-weight: 700; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.span2 { grid-column: 1 / -1; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: minmax(0, 1fr); } }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label, .field .lbl { font-weight: 600; font-size: 13px; }
+.field small { font-size: 12.5px; color: var(--muted); }
+.field input:not([type="checkbox"]):not([type="radio"]), .field select, .field textarea, .tb input, .tb select { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 8px 10px; min-height: 38px; }
+.field textarea { min-height: 76px; resize: vertical; }
+.field.check { flex-direction: row; align-items: center; gap: 10px; }
+.field.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 12px; padding: 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); max-height: 200px; overflow-y: auto; }
+.checks label { display: flex; align-items: flex-start; gap: 8px; font-weight: 500; font-size: 13.5px; }
+.checks input { width: 16px; height: 16px; margin-top: 3px; accent-color: var(--accent); flex: none; }
+.form-error { margin: 12px 0 0; min-height: 1.4em; color: var(--t30-fg); font-weight: 600; font-size: 14px; }
+.modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 7px 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.results { display: grid; gap: 4px; margin-top: 6px; }
+.results button { text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 8px 10px; cursor: pointer; font-weight: 600; }
+.results button:hover { border-color: var(--accent); }
+.tb { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.tb input[type="search"] { width: 240px; max-width: 100%; }
+.tb select { width: auto; min-width: 160px; }
+.tb label.inl { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; }
+textarea.copybox { width: 100%; min-height: 220px; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 10px; font: 13px/1.5 var(--font-mono); }
+
+.toast { position: fixed; z-index: 60; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: calc(100% - 32px); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 6px; font-size: 14px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .18s, transform .18s; }
+.toast.show { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>Training Register</h1>
+      <p class="sub">Staff certifications, courses and compliance records for the marina.</p>
+    </div>
+    <div class="who" id="who"></div>
+  </header>
+  <div class="ruler" aria-hidden="true"></div>
+  <nav class="nav" id="nav" role="tablist" aria-label="Sections"></nav>
+  <main id="view"></main>
+</div>
+<div id="modal-root"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const CATS = [
+    { id: 'maritime', label: 'Maritime safety', v: '--c-maritime' },
+    { id: 'radio', label: 'Radio operations', v: '--c-radio' },
+    { id: 'environment', label: 'Environmental compliance', v: '--c-env' },
+    { id: 'machinery', label: 'Machinery & maintenance', v: '--c-mach' },
+    { id: 'firstaid', label: 'First aid', v: '--c-aid' },
+    { id: 'other', label: 'Other', v: '--c-other' }
+  ];
+  const CAT = {};
+  CATS.forEach(c => { CAT[c.id] = c; });
+  const catOf = id => CAT[id] || CAT.other;
+  const catVar = c => 'var(' + catOf(c.category).v + ')';
+  const DOC_KINDS = { certificate: 'Certificate', card: 'Completion card', material: 'Training material', other: 'Other' };
+  const STATUS_LABEL = { completed: 'Completed', in_progress: 'In progress', scheduled: 'Scheduled' };
+  const RE_DATE = /^\d{4}-\d{2}-\d{2}$/;
+  const RE_ASSET = /^[0-9a-f]{32}$/;
+
+  /* PURE:START */
+  const pad = n => String(n).padStart(2, '0');
+  const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const fromYmd = s => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+  const todayYmd = () => ymd(new Date());
+  const addDays = (s, n) => { const d = fromYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+  const addMonths = (s, n) => {
+    const p = s.split('-').map(Number);
+    const first = new Date(p[0], p[1] - 1 + n, 1);
+    const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    return ymd(new Date(first.getFullYear(), first.getMonth(), Math.min(p[2], last)));
+  };
+  const daysBetween = (a, b) => Math.round((fromYmd(b) - fromYmd(a)) / 86400000);
+  const tierOf = days => days < 0 ? 'exp' : days <= 30 ? '30' : days <= 60 ? '60' : days <= 90 ? '90' : 'ok';
+  const appliesTo = (course, staff) => {
+    if (!course.appliesTo.length) return true;
+    const r = (staff.role || '').trim().toLowerCase();
+    return course.appliesTo.some(x => x.trim().toLowerCase() === r);
+  };
+  const isRequired = (course, staff) =>
+    !!staff && course.active && ((course.required && appliesTo(course, staff)) || staff.assigned.indexOf(course.id) >= 0);
+  const latestCompleted = (recs, cid) => {
+    let best = null;
+    recs.forEach(r => {
+      if (r.courseId === cid && r.status === 'completed' && r.completedOn) {
+        if (!best || r.completedOn > best.completedOn ||
+            (r.completedOn === best.completedOn && (r.expiresOn || '9999') > (best.expiresOn || '9999'))) best = r;
+      }
+    });
+    return best;
+  };
+  const nextOpen = (recs, cid) => {
+    let pick = null;
+    recs.forEach(r => {
+      if (r.courseId === cid && r.status !== 'completed') {
+        if (!pick || (r.scheduledFor || '9999') < (pick.scheduledFor || '9999')) pick = r;
+      }
+    });
+    return pick;
+  };
+  const cellState = (staff, course, recs, today) => {
+    const req = isRequired(course, staff), done = latestCompleted(recs, course.id), open = nextOpen(recs, course.id);
+    const out = { req: req, kind: 'na', days: null, rec: null, open: open };
+    if (done) {
+      out.rec = done;
+      if (done.expiresOn) { out.days = daysBetween(today, done.expiresOn); const t = tierOf(out.days); out.kind = t === 'ok' ? 'current' : t; }
+      else out.kind = 'current';
+    } else if (open) { out.rec = open; out.kind = open.status === 'in_progress' ? 'prog' : 'sched'; }
+    else if (req) out.kind = 'miss';
+    return out;
+  };
+  const isCompliant = k => k === 'current' || k === '90' || k === '60' || k === '30';
+  const buildPairs = (staffList, courses, recsOf, today) => {
+    const pairs = [];
+    staffList.forEach(s => {
+      if (!s.active) return;
+      const recs = recsOf(s.id);
+      courses.forEach(c => {
+        if (!c.active) return;
+        const st = cellState(s, c, recs, today);
+        if (st.req || st.rec) pairs.push({ staff: s, course: c, st: st });
+      });
+    });
+    return pairs;
+  };
+  const summarize = (pairs, keyFn) => {
+    const m = {};
+    pairs.forEach(p => {
+      if (!p.st.req) return;
+      const k = keyFn(p);
+      const o = m[k] || (m[k] = { req: 0, ok: 0, exp: 0, soon: 0, miss: 0 });
+      o.req++;
+      const kind = p.st.kind;
+      if (isCompliant(kind)) o.ok++;
+      if (kind === 'exp') o.exp++;
+      if (kind === 'miss') o.miss++;
+      if (kind === '30' || kind === '60' || kind === '90') o.soon++;
+    });
+    return m;
+  };
+  const pct = o => o && o.req ? Math.round(o.ok / o.req * 100) : null;
+  /* PURE:END */
+
+  const fmtD = new Intl.DateTimeFormat('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
+  const fd = s => s ? fmtD.format(fromYmd(s)) : '';
+  const fmtLong = new Intl.DateTimeFormat('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' });
+  const fmtMonth = new Intl.DateTimeFormat('en-NZ', { month: 'long', year: 'numeric' });
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const rid = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  const ADMIN_VIEWS = [['dashboard', 'Dashboard'], ['matrix', 'Matrix'], ['calendar', 'Calendar'], ['staff', 'Staff'], ['courses', 'Courses'], ['reports', 'Reports'], ['reminders', 'Reminders']];
+  const STAFF_VIEWS = [['mine', 'My training'], ['calendar', 'Calendar']];
+
+  const t0 = new Date();
+  const state = {
+    view: null, me: { id: null, name: '', admin: false, canWrite: null },
+    staff: [], courses: [], training: new Map(), plans: [], dragId: null,
+    loaded: { staff: false, courses: false, training: false, plans: false },
+    dbAvailable: null, error: '', db: null, userNs: null, assets: null, dl: null,
+    names: {}, asked: new Set(), lastFocus: null,
+    profileId: null, attn: 'all',
+    cal: { y: t0.getFullYear(), m: t0.getMonth(), sel: todayYmd(), kinds: new Set(['plan', 'sched', 'done', 'exp']), mode: 'month' },
+    fCat: new Set(), fRole: '', fQ: '', showInactive: false, mxCat: new Set(),
+    confirm: null, D: null
+  };
+
+  /* ---------- DOM helper ---------- */
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    if (props) for (const k of Object.keys(props)) {
+      const v = props[k];
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'style') for (const p of Object.keys(v)) el.style.setProperty(p, v[p]);
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
+      else if (v === true) el.setAttribute(k, '');
+      else el.setAttribute(k, v);
+    }
+    const add = l => l.forEach(kid => {
+      if (kid == null || kid === false) return;
+      if (Array.isArray(kid)) return add(kid);
+      el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    });
+    add(kids);
+    return el;
+  }
+  const $ = id => document.getElementById(id);
+
+  /* ---------- cleaning ---------- */
+  const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+  const strList = (v, n, m) => Array.isArray(v) ? v.filter(x => typeof x === 'string' && x).map(x => x.slice(0, m)).slice(0, n) : [];
+  const dateOr = v => (typeof v === 'string' && RE_DATE.test(v)) ? v : '';
+  function cleanCourse(id, d) {
+    if (!d || typeof d.title !== 'string') return null;
+    return {
+      id, title: d.title.slice(0, 120), category: CAT[d.category] ? d.category : 'other',
+      validity: Math.max(0, Math.min(240, parseInt(d.validity, 10) || 0)), provider: str(d.provider, 120),
+      required: d.required === true, appliesTo: strList(d.appliesTo, 30, 60), active: d.active !== false,
+      notes: str(d.notes, 400), example: d.example === true
+    };
+  }
+  function cleanStaff(id, d) {
+    if (!d) return null;
+    return {
+      id, name: str(d.name, 100), role: str(d.role, 80), department: str(d.department, 80), phone: str(d.phone, 40),
+      email: str(d.email, 120), startDate: dateOr(d.startDate), active: d.active !== false,
+      assigned: strList(d.assigned, 100, 200), notes: str(d.notes, 600), example: d.example === true
+    };
+  }
+  function cleanDoc(d) {
+    if (!d || typeof d.id !== 'string' || !RE_ASSET.test(d.id)) return null;
+    return {
+      id: d.id, name: str(d.name, 160) || 'Document', kind: DOC_KINDS[d.kind] ? d.kind : 'other',
+      recordId: str(d.recordId, 80), size: Math.max(0, Number(d.size) || 0), addedOn: dateOr(d.addedOn)
+    };
+  }
+  function cleanTraining(id, d) {
+    const recs = [], raw = d && d.records && typeof d.records === 'object' ? d.records : {};
+    Object.keys(raw).forEach(k => {
+      const r = raw[k];
+      if (!r || typeof r.courseId !== 'string') return;
+      const rem = {};
+      if (r.reminders && typeof r.reminders === 'object') Object.keys(r.reminders).forEach(t => { const v = dateOr(r.reminders[t]); if (v) rem[t] = v; });
+      recs.push({
+        id: k, courseId: r.courseId, status: STATUS_LABEL[r.status] ? r.status : 'completed',
+        completedOn: dateOr(r.completedOn), scheduledFor: dateOr(r.scheduledFor), expiresOn: dateOr(r.expiresOn),
+        certNo: str(r.certNo, 60), notes: str(r.notes, 400), reminders: rem
+      });
+    });
+    const docs = Array.isArray(d && d.docs) ? d.docs.map(cleanDoc).filter(Boolean) : [];
+    return { id, recs, docs, example: !!(d && d.example === true) };
+  }
+
+  function cleanPlan(id, d) {
+    if (!d || typeof d.title !== 'string') return null;
+    const scope = ['date', 'month', 'year'].includes(d.scope) ? d.scope : 'date';
+    const date = dateOr(d.date), month = (typeof d.month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(d.month)) ? d.month : '';
+    const year = parseInt(d.year, 10) || 0;
+    if (scope === 'date' && !date) return null;
+    if (scope === 'month' && !month) return null;
+    if (scope === 'year' && !(year >= 2000 && year <= 2100)) return null;
+    return { id, title: d.title.slice(0, 120), kind: d.kind === 'drill' ? 'drill' : 'training', courseId: str(d.courseId, 200), scope, date, month, year,
+      status: d.status === 'done' ? 'done' : 'planned', audience: str(d.audience, 120), notes: str(d.notes, 400), example: d.example === true };
+  }
+
+  /* ---------- derived data ---------- */
+  const recsOf = pid => (state.training.get(pid) || { recs: [] }).recs;
+  const docsOf = pid => (state.training.get(pid) || { docs: [] }).docs;
+  function staffName(st) {
+    return st.name || (st.id === state.me.id ? state.me.name : state.names[st.id]) || 'Staff member';
+  }
+  const firstName = st => staffName(st).split(/\s+/)[0];
+  function derive() {
+    const today = todayYmd();
+    const cmap = new Map(state.courses.map(c => [c.id, c]));
+    const smap = new Map(state.staff.map(s => [s.id, s]));
+    const pairs = buildPairs(state.staff, state.courses, recsOf, today);
+    state.D = { today, cmap, smap, pairs, activeStaff: state.staff.filter(s => s.active), activeCourses: state.courses.filter(c => c.active) };
+  }
+  function reminderItems() {
+    const out = [];
+    state.D.pairs.forEach(p => {
+      const k = p.st.kind;
+      if ((k === 'exp' || k === '30' || k === '60' || k === '90') && p.st.rec) {
+        out.push({ staff: p.staff, course: p.course, kind: k, rec: p.st.rec, days: p.st.days, sent: p.st.rec.reminders[k] || '' });
+      }
+    });
+    return out;
+  }
+  const pendingReminders = () => reminderItems().filter(i => !i.sent).length;
+
+  function resolveNames() {
+    if (!state.userNs) return;
+    const need = [];
+    state.staff.forEach(s => { if (!s.name && s.id !== state.me.id && !state.asked.has(s.id) && !need.includes(s.id)) need.push(s.id); });
+    if (!need.length) return;
+    need.forEach(u => state.asked.add(u));
+    state.userNs.profiles(need).then(ps => {
+      let ch = false;
+      need.forEach(u => { const n = (ps && ps[u] && ps[u].name) || ''; if (n !== state.names[u]) { state.names[u] = n; ch = true; } });
+      if (ch) scheduleRender();
+    }).catch(() => {});
+  }
+
+  /* ---------- toast / clipboard ---------- */
+  let toastTimer;
+  function toast(msg) {
+    const el = $('toast'); el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 4200);
+  }
+  async function copyText(text, title) {
+    try { await navigator.clipboard.writeText(text); toast('Copied to the clipboard.'); }
+    catch (e) {
+      const ta = h('textarea', { class: 'copybox', readonly: true }, text);
+      openModal(title || 'Copy this text', h('div', { class: 'field' }, ta, h('small', null, 'Select all and copy. Your browser blocked the copy button.'),
+        h('div', { class: 'modal-actions' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Close'))), {});
+      ta.focus(); ta.select();
+    }
+  }
+
+  /* ---------- rendering ---------- */
+  let raf = 0;
+  function scheduleRender() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); }
+  function viewsForRole() { return state.me.admin ? ADMIN_VIEWS : STAFF_VIEWS; }
+  function render() {
+    const a = document.activeElement;
+    let fk = null, ss = null, se = null;
+    if (a && a.dataset && a.dataset.fk) { fk = a.dataset.fk; try { ss = a.selectionStart; se = a.selectionEnd; } catch (e) { /* not a text field */ } }
+    derive(); resolveNames();
+    const views = viewsForRole();
+    if (!state.view || !views.some(v => v[0] === state.view)) state.view = views[0][0];
+    renderHeader(); renderNav();
+    let v;
+    switch (state.view) {
+      case 'dashboard': v = dashboardView(); break;
+      case 'matrix': v = matrixView(); break;
+      case 'calendar': v = calendarView(); break;
+      case 'staff': v = staffView(); break;
+      case 'courses': v = coursesView(); break;
+      case 'reports': v = reportsView(); break;
+      case 'reminders': v = remindersView(); break;
+      default: v = mineView();
+    }
+    $('view').replaceChildren(v);
+    if (fk) {
+      const el = [...document.querySelectorAll('[data-fk]')].find(e => e.dataset.fk === fk);
+      if (el) { el.focus({ preventScroll: true }); if (ss != null && el.setSelectionRange) { try { el.setSelectionRange(ss, se); } catch (e) { /* ignore */ } } }
+    }
+  }
+  function renderHeader() {
+    const kids = [];
+    if (state.me.id) {
+      kids.push(h('span', { class: 'who-name' }, state.me.name || 'Signed in'));
+      kids.push(h('span', { class: 'tag ' + (state.me.admin ? 'accent' : '') }, state.me.admin ? 'Manager' : 'Staff'));
+    } else kids.push(h('span', { class: 'who-name muted' }, 'View only'));
+    $('who').replaceChildren(...kids);
+  }
+  function renderNav() {
+    const pend = state.me.admin ? pendingReminders() : 0;
+    $('nav').replaceChildren(...viewsForRole().map(v => h('button', {
+      class: 'tab', role: 'tab', 'aria-selected': String(state.view === v[0]), 'data-fk': 'tab-' + v[0],
+      onclick: () => { state.view = v[0]; if (v[0] !== 'staff') state.profileId = null; state.confirm = null; render(); }
+    }, v[1], v[0] === 'reminders' && pend > 0 && h('span', { class: 'badge', 'aria-label': pend + ' pending' }, String(pend)))));
+  }
+
+  /* ---------- shared bits ---------- */
+  const note = (msg, cls) => h('div', { class: 'note' + (cls ? ' ' + cls : '') }, msg);
+  function notices() {
+    const out = [], admin = state.me.admin && state.db;
+    if (state.dbAvailable === false) out.push(note('Live data is not available in this view. Open the register from its Claude link while signed in.'));
+    else if (state.error) out.push(note(state.error));
+    else if (state.dbAvailable === null || !(state.loaded.staff && state.loaded.courses && state.loaded.training && state.loaded.plans)) out.push(note('Loading the register…', 'muted'));
+    else if (admin && !state.staff.length && !state.courses.length) {
+      out.push(h('div', { class: 'empty' },
+        h('h2', null, 'Set up your register'),
+        h('p', { class: 'muted' }, 'Start by adding your courses and how long each certificate lasts, then add your staff and record what they hold. Or load example data to see how the matrix, expiry alerts and reports work. Examples can be removed in one click.'),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn primary', 'data-fk': 'e-course', onclick: () => openCourseEditor(null) }, 'Add a course'),
+          h('button', { class: 'btn', 'data-fk': 'e-staff', onclick: () => openStaffEditor(null) }, 'Add a staff member'),
+          h('button', { class: 'btn', 'data-fk': 'e-ex', onclick: addExamples }, 'Load example data'))));
+    }
+    if (state.staff.some(s => s.example) || state.courses.some(c => c.example) || state.plans.some(p => p.example)) {
+      out.push(h('div', { class: 'note' }, h('span', null, 'Example data is showing.'),
+        admin && h('button', { class: 'btn small', 'data-fk': 'rm-ex', onclick: removeExamples }, 'Remove example data')));
+    }
+    return out;
+  }
+  function statusPill(st) {
+    const labels = { current: 'Current', '90': '≤ 90 days', '60': '≤ 60 days', '30': '≤ 30 days', exp: 'Expired', prog: 'In progress', sched: 'Scheduled', miss: 'Missing', na: '—' };
+    return h('span', { class: 'pill st-' + st.kind }, labels[st.kind]);
+  }
+  function dueText(st) {
+    if (st.kind === 'miss') return 'Not recorded';
+    if (st.kind === 'prog' || st.kind === 'sched') return st.rec && st.rec.scheduledFor ? fd(st.rec.scheduledFor) : '';
+    if (!st.rec) return '';
+    if (!st.rec.expiresOn) return 'No expiry';
+    const d = st.days;
+    return fd(st.rec.expiresOn) + ' (' + (d < 0 ? Math.abs(d) + ' days ago' : d === 0 ? 'today' : 'in ' + d + ' days') + ')';
+  }
+  const SYM = { current: '✓', '90': '90', '60': '60', '30': '30', exp: '✕', prog: '◐', sched: '◷', miss: '!', na: '–' };
+  function openProfile(pid) { state.view = 'staff'; state.profileId = pid; state.confirm = null; render(); window.scrollTo(0, 0); }
+  const personLink = st => h('button', { class: 'linkbtn', 'data-fk': 'pl-' + st.id + '-' + Math.random().toString(36).slice(2, 5), onclick: () => { if (state.me.admin) openProfile(st.id); } }, staffName(st));
+  const tableWrap = (...kids) => h('div', { class: 'tbl-wrap' }, ...kids);
+
+  /* ---------- dashboard ---------- */
+  function dashboardView() {
+    const D = state.D, wrap = h('div', { style: { display: 'grid', gap: '18px' } }, notices());
+    if (!D.pairs.length && !state.staff.length) return wrap;
+    const overall = summarize(D.pairs, () => 'all').all || { req: 0, ok: 0 };
+    const counts = { exp: 0, miss: 0, '30': 0, '60': 0, '90': 0 };
+    D.pairs.forEach(p => { if (p.st.req && counts[p.st.kind] !== undefined) counts[p.st.kind]++; });
+    const tile = (key, label, big, cls) => h('button', { class: 'tile ' + cls, 'aria-pressed': String(state.attn === key), 'data-fk': 'tile-' + key, onclick: () => { state.attn = state.attn === key ? 'all' : key; render(); } }, h('b', null, big), h('span', null, label));
+    const p = pct(overall);
+    wrap.append(h('div', { class: 'tiles' },
+      h('div', { class: 'tile static t-ok' }, h('b', null, p == null ? '–' : p + '%'), h('span', null, 'Compliant (' + overall.ok + ' of ' + overall.req + ' required)')),
+      tile('exp', 'Expired', String(counts.exp), 't-exp'),
+      tile('miss', 'Required, missing', String(counts.miss), 't-miss'),
+      tile('30', 'Expire within 30 days', String(counts['30']), 't-30'),
+      tile('60', 'Expire in 31–60 days', String(counts['60']), 't-60'),
+      tile('90', 'Expire in 61–90 days', String(counts['90']), 't-90')));
+
+    const rank = { exp: 0, miss: 1, '30': 2, '60': 3, '90': 4 };
+    let items = D.pairs.filter(x => x.st.req && rank[x.st.kind] !== undefined);
+    if (state.attn !== 'all') items = items.filter(x => x.st.kind === state.attn);
+    items.sort((a, b) => rank[a.st.kind] - rank[b.st.kind] || (a.st.days == null ? 0 : a.st.days) - (b.st.days == null ? 0 : b.st.days) || staffName(a.staff).localeCompare(staffName(b.staff)));
+    const tbody = h('tbody');
+    items.forEach(x => tbody.append(h('tr', null,
+      h('td', null, personLink(x.staff), h('span', { class: 'sub2' }, x.staff.role)),
+      h('td', null, h('span', { class: 'cat', style: { '--cat': catVar(x.course) } }, h('span', { class: 'sw', 'aria-hidden': 'true' }), catOf(x.course.category).label), h('span', null, x.course.title)),
+      h('td', null, statusPill(x.st), x.st.open && x.st.kind !== 'sched' && x.st.kind !== 'prog' && h('span', { class: 'sub2' }, 'Renewal ' + (x.st.open.status === 'in_progress' ? 'in progress' : 'booked ' + fd(x.st.open.scheduledFor)))),
+      h('td', null, dueText(x.st)),
+      h('td', null, h('button', { class: 'btn small', 'data-fk': 'rec-' + x.staff.id + '-' + x.course.id, onclick: () => openRecords(x.staff.id, x.course.id) }, 'Records')))));
+    const attn = h('section', { class: 'panel' },
+      h('div', { class: 'row between' }, h('h2', null, 'Needs attention'),
+        state.attn !== 'all' && h('button', { class: 'btn small', 'data-fk': 'attn-clear', onclick: () => { state.attn = 'all'; render(); } }, 'Show all')),
+      items.length ? tableWrap(h('table', null, h('thead', null, h('tr', null, h('th', null, 'Person'), h('th', null, 'Course'), h('th', null, 'Status'), h('th', null, 'Due'), h('th', null, ''))), tbody))
+        : h('p', { class: 'muted' }, D.pairs.length ? 'Nothing needs attention here.' : 'Add staff and records to see alerts.'));
+
+    const cats = summarize(D.pairs, x => x.course.category);
+    const side = h('div', { style: { display: 'grid', gap: '18px' } },
+      h('section', { class: 'panel' }, h('h2', null, 'Compliance by category'),
+        CATS.filter(c => cats[c.id]).length ? h('div', { style: { display: 'grid', gap: '12px' } }, CATS.filter(c => cats[c.id]).map(c => h('div', null,
+          h('div', { class: 'row between' }, h('span', { class: 'cat', style: { '--cat': 'var(' + c.v + ')' } }, h('span', { class: 'sw', 'aria-hidden': 'true' }), c.label), h('span', { class: 'mono' }, cats[c.id].ok + '/' + cats[c.id].req)),
+          pctBar(pct(cats[c.id]))))) : h('p', { class: 'muted' }, 'No required courses yet.')),
+      h('section', { class: 'panel' }, h('h2', null, 'Coming up, next 30 days'), upcomingList(30)));
+    wrap.append(h('div', { class: 'cols' }, attn, side));
+    return wrap;
+  }
+  function pctBar(p) {
+    const cls = p == null ? '' : p >= 90 ? '' : p >= 70 ? 'warn' : 'low';
+    return h('div', { class: 'pctcell' }, h('div', { class: 'bar ' + cls }, h('i', { style: { width: (p || 0) + '%' } })), h('b', null, p == null ? '–' : p + '%'));
+  }
+  function upcomingList(days) {
+    const D = state.D, end = addDays(D.today, days), rows = [];
+    state.staff.forEach(s => { if (!s.active) return; recsOf(s.id).forEach(r => {
+      if (r.status !== 'completed' && r.scheduledFor && r.scheduledFor >= D.today && r.scheduledFor <= end && D.cmap.has(r.courseId)) rows.push({ date: r.scheduledFor, s, r, c: D.cmap.get(r.courseId) });
+    }); });
+    state.plans.forEach(p => { if (p.scope === 'date' && p.status !== 'done' && p.date >= D.today && p.date <= end) rows.push({ date: p.date, plan: p }); });
+    rows.sort((a, b) => a.date.localeCompare(b.date));
+    if (!rows.length) return h('p', { class: 'muted' }, 'No training or drills are booked in this window.');
+    return h('div', null, rows.slice(0, 12).map(x => x.plan
+      ? h('div', { class: 'evrow' }, h('span', { class: 'mono' }, fd(x.date)), h('span', { class: 'grow' }, h('b', null, PLAN_ICON[x.plan.kind] + ' ' + x.plan.title)), h('span', { class: 'pill st-sched' }, PLAN_WORD[x.plan.kind]))
+      : h('div', { class: 'evrow' },
+        h('span', { class: 'mono' }, fd(x.date)),
+        h('span', { class: 'grow' }, h('b', null, x.c.title), ' ', state.me.admin ? staffName(x.s) : ''),
+        h('span', { class: 'pill st-' + (x.r.status === 'in_progress' ? 'prog' : 'sched') }, STATUS_LABEL[x.r.status]))));
+  }
+
+  /* ---------- matrix ---------- */
+  function filteredStaff() {
+    const q = state.fQ.trim().toLowerCase();
+    return state.staff.filter(s => (state.showInactive || s.active) && (!state.fRole || (s.role || '') === state.fRole) &&
+      (!q || staffName(s).toLowerCase().includes(q) || (s.role || '').toLowerCase().includes(q) || (s.department || '').toLowerCase().includes(q)))
+      .sort((a, b) => staffName(a).localeCompare(staffName(b)));
+  }
+  const rolesList = () => [...new Set(state.staff.map(s => s.role).filter(Boolean))].sort();
+  function filterBar(withCats, catSet) {
+    const bar = h('div', { class: 'panel', style: { display: 'grid', gap: '10px' } });
+    const tb = h('div', { class: 'tb' },
+      h('input', { type: 'search', placeholder: 'Search name, role or team', value: state.fQ, 'aria-label': 'Search staff', 'data-fk': 'q', oninput: e => { state.fQ = e.target.value; render(); } }),
+      h('select', { 'aria-label': 'Filter by role', 'data-fk': 'role', onchange: e => { state.fRole = e.target.value; render(); } },
+        h('option', { value: '' }, 'All roles'), rolesList().map(r => h('option', { value: r, selected: state.fRole === r }, r))),
+      h('label', { class: 'inl' }, h('input', { type: 'checkbox', checked: state.showInactive, 'data-fk': 'inact', onchange: e => { state.showInactive = e.target.checked; render(); } }), 'Include inactive staff'));
+    bar.append(tb);
+    if (withCats) {
+      bar.append(h('div', { class: 'chips', role: 'group', 'aria-label': 'Filter by category' },
+        h('button', { class: 'fchip', 'aria-pressed': String(catSet.size === 0), 'data-fk': 'cf-all', onclick: () => { catSet.clear(); render(); } }, 'All categories'),
+        CATS.map(c => h('button', { class: 'fchip', style: { '--cat': 'var(' + c.v + ')' }, 'aria-pressed': String(catSet.has(c.id)), 'data-fk': 'cf-' + c.id,
+          onclick: () => { if (catSet.has(c.id)) catSet.delete(c.id); else catSet.add(c.id); render(); } }, h('span', { class: 'sw', 'aria-hidden': 'true' }), c.label))));
+    }
+    return bar;
+  }
+  function matrixView() {
+    const D = state.D, wrap = h('div', { style: { display: 'grid', gap: '18px' } }, notices());
+    if (!state.staff.length || !D.activeCourses.length) { if (state.loaded.staff && state.loaded.courses) wrap.append(note('The matrix needs at least one staff member and one course.')); return wrap; }
+    wrap.append(filterBar(true, state.mxCat));
+    const courses = D.activeCourses.filter(c => !state.mxCat.size || state.mxCat.has(c.category)).sort((a, b) => CATS.findIndex(x => x.id === a.category) - CATS.findIndex(x => x.id === b.category) || a.title.localeCompare(b.title));
+    const staff = filteredStaff();
+    wrap.append(h('div', { class: 'legend' }, [['current', 'Current'], ['90', '≤ 90 days'], ['60', '≤ 60 days'], ['30', '≤ 30 days'], ['exp', 'Expired'], ['prog', 'In progress'], ['sched', 'Scheduled'], ['miss', 'Required, missing']].map(x => h('span', { class: 'pill st-' + x[0] }, SYM[x[0]] + ' ' + x[1])), h('span', null, '– not required')));
+    const thead = h('tr', null, h('th', { class: 'rowh' }, 'Staff member'), courses.map(c => h('th', { scope: 'col' }, h('span', { class: 'sw', style: { '--cat': catVar(c) }, 'aria-hidden': 'true' }), c.title)));
+    const tbody = h('tbody');
+    staff.forEach(s => {
+      const recs = recsOf(s.id);
+      tbody.append(h('tr', null, h('th', { class: 'rowh', scope: 'row' }, h('button', { class: 'linkbtn', 'data-fk': 'mxp-' + s.id, onclick: () => openProfile(s.id) }, staffName(s)), h('span', { class: 'sub2 muted', style: { display: 'block', fontWeight: '400', fontSize: '12px' } }, (s.role || 'No role') + (s.active ? '' : ' · inactive'))),
+        courses.map(c => {
+          const st = cellState(s, c, recs, D.today);
+          const label = staffName(s) + ', ' + c.title + ': ' + (st.kind === 'na' ? 'not required' : dueText(st) ? st.kind + ', ' + dueText(st) : st.kind);
+          return h('td', null, h('button', { class: 'mc st-' + st.kind, 'aria-label': label, title: label, 'data-fk': 'mx-' + s.id + '-' + c.id, onclick: () => openRecords(s.id, c.id) },
+            h('span', null, SYM[st.kind]), (st.kind === 'current' || st.kind === '90' || st.kind === '60' || st.kind === '30' || st.kind === 'exp') && st.rec && st.rec.expiresOn && h('small', null, shortDate(st.rec.expiresOn)),
+            (st.kind === 'sched' || st.kind === 'prog') && st.rec && st.rec.scheduledFor && h('small', null, shortDate(st.rec.scheduledFor))));
+        })));
+    });
+    wrap.append(staff.length ? h('div', { class: 'tbl-wrap' }, h('table', { class: 'mx' }, h('thead', null, thead), tbody)) : note('No staff match these filters.'));
+    return wrap;
+  }
+  const shortDate = s => { const d = fromYmd(s); return d.getDate() + ' ' + d.toLocaleString('en-NZ', { month: 'short' }) + " '" + String(d.getFullYear()).slice(2); };
+
+  /* ---------- calendar ---------- */
+  const PLAN_ICON = { training: '◆', drill: '⚑' };
+  const PLAN_WORD = { training: 'Training', drill: 'Drill' };
+  const EV_ICON = { sched: '◷', done: '✓', exp: '⚠', plan: '◆' };
+  const EV_LABEL = { plan: 'Planned training and drills', sched: 'Scheduled', done: 'Completed', exp: 'Certificate expires' };
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const isAdmin = () => !!(state.me.admin && state.db);
+
+  function buildEvents() {
+    const D = state.D, evs = [];
+    state.staff.forEach(s => {
+      if (!s.active) return;
+      const recs = recsOf(s.id);
+      recs.forEach(r => {
+        const c = D.cmap.get(r.courseId); if (!c) return;
+        if (r.status !== 'completed' && r.scheduledFor) evs.push({ date: r.scheduledFor, kind: 'sched', s, c, r });
+        if (r.status === 'completed' && r.completedOn) evs.push({ date: r.completedOn, kind: 'done', s, c, r });
+      });
+      D.activeCourses.forEach(c => { const l = latestCompleted(recs, c.id); if (l && l.expiresOn) evs.push({ date: l.expiresOn, kind: 'exp', s, c, r: l }); });
+    });
+    state.plans.forEach(p => { if (p.scope === 'date') evs.push({ date: p.date, kind: 'plan', plan: p }); });
+    return evs.filter(e => state.cal.kinds.has(e.kind));
+  }
+  function evText(e) { return (state.me.admin ? firstName(e.s) + ' · ' : '') + e.c.title; }
+
+  /* plan helpers */
+  const planWhen = p => p.scope === 'month' ? 'Any day in ' + MONTHS[+p.month.slice(5) - 1] + ' ' + p.month.slice(0, 4) : p.scope === 'year' ? 'Any time in ' + p.year : fd(p.date);
+  function planMeta(p) {
+    const c = p.courseId && state.D.cmap.get(p.courseId);
+    return PLAN_WORD[p.kind] + (c ? ' · ' + c.title : '') + (p.audience ? ' · ' + p.audience : '') + (p.status === 'done' ? ' · Done' : '');
+  }
+  function dragProps(p) {
+    if (!isAdmin() || p.status === 'done') return {};
+    return {
+      draggable: 'true', title: 'Drag onto a day or month to reschedule',
+      ondragstart: e => { state.dragId = p.id; try { e.dataTransfer.setData('text/plain', 'plan:' + p.id); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* ignore */ } },
+      ondragend: () => { state.dragId = null; document.querySelectorAll('.drop').forEach(c => c.classList.remove('drop')); }
+    };
+  }
+  function attachDrop(el, fn) {
+    el.addEventListener('dragover', e => { if (isAdmin() && state.dragId) { e.preventDefault(); try { e.dataTransfer.dropEffect = 'move'; } catch (x) { /* ignore */ } el.classList.add('drop'); } });
+    el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop'); });
+    el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('drop'); const id = state.dragId; state.dragId = null; if (id) fn(id); });
+  }
+  async function updatePlan(id, patch, msg) {
+    const p = state.plans.find(x => x.id === id);
+    if (!p || !state.db) return;
+    try { await state.db.doc('plans/' + id).update(patch); toast(msg(p)); }
+    catch (e) { toast('Could not change the plan. Only managers can do that.'); }
+  }
+  const moveToDay = (id, date) => { state.cal.sel = date; return updatePlan(id, { scope: 'date', date }, p => 'Moved “' + p.title + '” to ' + fd(date) + '.'); };
+  const moveToMonth = (id, key) => updatePlan(id, { scope: 'month', month: key }, p => '“' + p.title + '” now needs doing in ' + MONTHS[+key.slice(5) - 1] + ' ' + key.slice(0, 4) + '.');
+  const moveToYear = (id, y) => updatePlan(id, { scope: 'year', year: y }, p => '“' + p.title + '” now needs doing sometime in ' + y + '.');
+  const togglePlanDone = p => updatePlan(p.id, { status: p.status === 'done' ? 'planned' : 'done' }, () => p.status === 'done' ? 'Marked as not done.' : 'Marked as done.');
+
+  function planChip(p, withDate) {
+    return h('span', Object.assign({ class: 'ev ev-plan' + (p.status === 'done' ? ' done' : '') }, dragProps(p)),
+      PLAN_ICON[p.kind] + ' ' + (withDate && p.scope === 'date' ? shortDate(p.date) + ' ' : '') + p.title);
+  }
+  function planButtons(p) {
+    return h('span', { class: 'row' },
+      h('button', { class: 'btn small', 'data-fk': 'pd-' + p.id, onclick: () => togglePlanDone(p) }, p.status === 'done' ? 'Undo done' : 'Mark done'),
+      p.status !== 'done' && h('button', { class: 'btn small', 'data-fk': 'pm-' + p.id, onclick: () => openMoveModal(p) }, p.scope === 'date' ? 'Move' : 'Set date'),
+      h('button', { class: 'btn small', 'data-fk': 'pe-' + p.id, onclick: () => openPlanEditor(p, null) }, 'Edit'));
+  }
+  function planRow(p) {
+    const ad = isAdmin();
+    return h('div', Object.assign({ class: 'evrow ev-plan' }, dragProps(p)),
+      h('span', { class: 'ico' }, PLAN_ICON[p.kind]),
+      h('span', { class: 'grow' }, h('b', { style: p.status === 'done' ? { textDecoration: 'line-through' } : {} }, p.title), h('span', { class: 'sub2' }, planMeta(p) + (p.scope !== 'date' ? ' · ' + planWhen(p) : '')), p.notes && h('span', { class: 'sub2' }, p.notes)),
+      ad && planButtons(p));
+  }
+
+  function openMoveModal(p) {
+    const err = h('p', { class: 'form-error', role: 'alert' });
+    const date = h('input', { id: 'mv-date', type: 'date', value: p.scope === 'date' ? p.date : state.D.today });
+    const save = h('button', { class: 'btn primary', type: 'submit' }, 'Move');
+    const form = h('form', { novalidate: true }, h('p', { class: 'muted', style: { margin: '-6px 0 12px' } }, p.title),
+      h('div', { class: 'form-grid' }, fld('mv-date', 'New date', date, null, 'span2')), err,
+      h('div', { class: 'modal-actions' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Cancel'), save));
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!date.value) { err.textContent = 'Choose a date.'; date.focus(); return; }
+      save.disabled = true; await moveToDay(p.id, date.value); closeModal(); render();
+    });
+    openModal('Move to another day', form, {});
+  }
+
+  function openPlanEditor(p, preset) {
+    if (!state.db) return;
+    const edit = !!p, today = state.D.today;
+    const v = p || { title: '', kind: 'training', courseId: '', scope: 'date', date: preset || state.cal.sel || today, month: '', year: 0, status: 'planned', audience: '', notes: '' };
+    const err = h('p', { class: 'form-error', role: 'alert' });
+    const fail = (m, el) => { err.textContent = m; if (el) el.focus(); return false; };
+    const kind = h('select', { id: 'p-kind' }, optionsOf([['training', 'Training'], ['drill', 'Drill']], v.kind));
+    const course = h('select', { id: 'p-course' }, h('option', { value: '' }, 'Not linked to a course'),
+      state.courses.filter(c => c.active || c.id === v.courseId).map(c => h('option', { value: c.id, selected: c.id === v.courseId }, c.title)));
+    const title = h('input', { id: 'p-title', type: 'text', maxlength: '120', value: v.title, autocomplete: 'off', placeholder: 'e.g. Fire evacuation drill' });
+    const scope = h('select', { id: 'p-scope' }, optionsOf([['date', 'On a specific day'], ['month', 'Sometime in a month'], ['year', 'Sometime in a year']], v.scope));
+    const date = h('input', { id: 'p-date', type: 'date', value: v.date || today });
+    const monIdx = v.month ? +v.month.slice(5) - 1 : state.cal.m;
+    const mon = h('select', { id: 'p-mon' }, MONTHS.map((n, i) => h('option', { value: pad(i + 1), selected: i === monIdx }, n)));
+    const yr = h('input', { id: 'p-year', type: 'number', min: '2000', max: '2100', step: '1', value: String(v.scope === 'month' && v.month ? v.month.slice(0, 4) : (v.year || state.cal.y)) });
+    const aud = h('input', { id: 'p-aud', type: 'text', maxlength: '120', value: v.audience, placeholder: 'e.g. All staff, dock team' });
+    const notes = h('textarea', { id: 'p-notes', maxlength: '400' }, v.notes);
+    const done = h('input', { id: 'p-done', type: 'checkbox', checked: v.status === 'done' });
+    const dateF = fld('p-date', 'Date', date), monF = fld('p-mon', 'Month', mon), yearF = fld('p-year', 'Year', yr);
+    const rep = h('select', { id: 'p-rep' }, optionsOf([['0', 'Does not repeat'], ['1', 'Every month'], ['3', 'Every 3 months'], ['6', 'Every 6 months'], ['12', 'Every year']], '0'));
+    const cnt = h('input', { id: 'p-cnt', type: 'number', min: '2', max: '24', step: '1', value: '4' });
+    const repF = fld('p-rep', 'Repeat', rep, 'Drills often run quarterly or every six months.'), cntF = fld('p-cnt', 'Number of times', cnt, 'Including the first one.');
+    function vis() {
+      dateF.hidden = scope.value !== 'date'; monF.hidden = scope.value !== 'month'; yearF.hidden = scope.value === 'date';
+      repF.hidden = edit || scope.value === 'year'; cntF.hidden = edit || scope.value === 'year' || rep.value === '0';
+    }
+    scope.addEventListener('change', vis); rep.addEventListener('change', vis);
+    course.addEventListener('change', () => { const c = state.D.cmap.get(course.value); if (c && !title.value.trim()) title.value = c.title; });
+    vis();
+    const del = h('div');
+    if (edit) {
+      const delBtn = h('button', { class: 'btn quiet', type: 'button', onclick: () => {
+        del.replaceChildren(h('div', { class: 'confirm' }, h('p', null, 'Delete this plan? This cannot be undone.'),
+          h('button', { class: 'btn danger small', type: 'button', onclick: async () => { try { await state.db.doc('plans/' + p.id).delete(); closeModal(); toast('Plan deleted.'); } catch (x) { fail('Could not delete the plan.'); } } }, 'Delete plan'),
+          h('button', { class: 'btn small', type: 'button', onclick: () => del.replaceChildren(delBtn) }, 'Keep'))); } }, 'Delete plan');
+      del.append(delBtn);
+    }
+    const saveBtn = h('button', { class: 'btn primary', type: 'submit' }, edit ? 'Save plan' : 'Add to calendar');
+    const form = h('form', { novalidate: true },
+      h('div', { class: 'form-grid' }, fld('p-kind', 'Type', kind), fld('p-course', 'Course (optional)', course), fld('p-title', 'What needs doing', title, null, 'span2'),
+        fld('p-scope', 'When', scope, 'Pick a month or year if the exact day is not set yet. Drag it onto a day later.', 'span2'), dateF, monF, yearF,
+        fld('p-aud', 'Who it is for', aud, null, 'span2'), fld('p-notes', 'Notes', notes, null, 'span2'),
+        edit && h('div', { class: 'field check span2' }, done, h('label', { for: 'p-done' }, 'Done')), repF, cntF),
+      err, h('div', { class: 'modal-actions', style: { justifyContent: 'space-between' } }, del, h('span', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Cancel'), saveBtn)));
+    form.addEventListener('submit', async e => {
+      e.preventDefault(); err.textContent = '';
+      const t = title.value.trim();
+      if (!t) return fail('Say what needs doing.', title);
+      const base = { title: t, kind: kind.value, courseId: course.value, scope: scope.value, audience: aud.value.trim(), notes: notes.value.trim(), status: edit && done.checked ? 'done' : 'planned', date: '', month: '', year: 0 };
+      const y = parseInt(yr.value, 10);
+      if (scope.value === 'date') { if (!date.value) return fail('Choose a date.', date); base.date = date.value; }
+      else {
+        if (!(y >= 2000 && y <= 2100)) return fail('Enter a year between 2000 and 2100.', yr);
+        if (scope.value === 'month') base.month = y + '-' + mon.value; else base.year = y;
+      }
+      let count = 1, step = 0;
+      if (!edit && scope.value !== 'year' && rep.value !== '0') {
+        step = parseInt(rep.value, 10); count = parseInt(cnt.value, 10);
+        if (!(count >= 2 && count <= 24)) return fail('Enter between 2 and 24 occurrences.', cnt);
+      }
+      saveBtn.disabled = true;
+      try {
+        if (edit) await state.db.doc('plans/' + p.id).set(Object.assign(base, p.example ? { example: true } : {}));
+        else for (let i = 0; i < count; i++) {
+          const item = Object.assign({}, base);
+          if (base.date) item.date = addMonths(base.date, step * i); else if (base.month) item.month = addMonths(base.month + '-01', step * i).slice(0, 7);
+          await state.db.collection('plans').add(item);
+        }
+        if (base.date) { const d = fromYmd(base.date); state.cal.sel = base.date; state.cal.y = d.getFullYear(); state.cal.m = d.getMonth(); }
+        else { state.cal.y = base.month ? +base.month.slice(0, 4) : base.year; if (base.month) state.cal.m = +base.month.slice(5) - 1; }
+        toast(edit ? 'Plan saved.' : count > 1 ? 'Added ' + count + ' plans.' : 'Added to the calendar.'); closeModal(); render();
+      } catch (ex) { saveBtn.disabled = false; fail('Could not save. Only managers can change the plan.'); }
+    });
+    openModal(edit ? 'Edit plan' : 'Plan training or a drill', form, {});
+  }
+
+  /* calendar views */
+  function selectDay(key) { const d = fromYmd(key); state.cal.sel = key; state.cal.y = d.getFullYear(); state.cal.m = d.getMonth(); render(); }
+  function calendarView() {
+    const ad = isAdmin(), mode = state.cal.mode;
+    const wrap = h('div', { style: { display: 'grid', gap: '18px' } }, notices());
+    const kindChips = h('div', { class: 'chips', role: 'group', 'aria-label': 'Event types' }, Object.keys(EV_LABEL).map(k => h('button', { class: 'fchip', 'aria-pressed': String(state.cal.kinds.has(k)), 'data-fk': 'ck-' + k,
+      onclick: () => { if (state.cal.kinds.has(k)) state.cal.kinds.delete(k); else state.cal.kinds.add(k); render(); } }, EV_ICON[k] + ' ' + EV_LABEL[k])));
+    const modeSeg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Calendar range' }, [['month', 'Month'], ['year', 'Year']].map(m => h('button', { type: 'button', 'aria-pressed': String(mode === m[0]), 'data-fk': 'cm-' + m[0], onclick: () => { state.cal.mode = m[0]; render(); } }, m[1])));
+    wrap.append(h('div', { class: 'row between' }, h('div', { class: 'row' }, modeSeg), ad && h('button', { class: 'btn primary', 'data-fk': 'plan-new', onclick: () => openPlanEditor(null, mode === 'month' ? state.cal.sel : null) }, 'Plan training or drill')), kindChips);
+    if (ad && !state.plans.length && state.loaded.plans) wrap.append(note('Nothing is planned yet. Use “Plan training or drill” to put a training session or drill on the calendar, for a specific day or just a month or year. You can drag it to another day later.'));
+    wrap.append(mode === 'year' ? yearView() : monthView());
+    return wrap;
+  }
+
+  function monthView() {
+    const ad = isAdmin();
+    const y = state.cal.y, m = state.cal.m;
+    const first = new Date(y, m, 1), off = (first.getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate(), rows = Math.ceil((off + dim) / 7);
+    const by = {};
+    buildEvents().forEach(e => { (by[e.date] = by[e.date] || []).push(e); });
+    const today = todayYmd(), root = h('div', { style: { display: 'grid', gap: '18px' } });
+    const nav = (label, aria, fn, fk) => h('button', { class: 'btn small', 'aria-label': aria, 'data-fk': fk, onclick: fn }, label);
+    const shift = n => { const d = new Date(y, m + n, 1); state.cal.y = d.getFullYear(); state.cal.m = d.getMonth(); state.cal.sel = (d.getFullYear() === t0.getFullYear() && d.getMonth() === t0.getMonth()) ? todayYmd() : ymd(d); render(); };
+    const head = h('div', { class: 'cal-head' }, h('h2', { class: 'month-label' }, fmtMonth.format(first)), h('div', { class: 'row' },
+      nav('←', 'Previous month', () => shift(-1), 'c-prev'),
+      nav('Today', 'Go to today', () => { const t = new Date(); state.cal.y = t.getFullYear(); state.cal.m = t.getMonth(); state.cal.sel = todayYmd(); render(); }, 'c-today'),
+      nav('→', 'Next month', () => shift(1), 'c-next')));
+
+    /* plans that still need a day */
+    const loose = state.cal.kinds.has('plan') ? state.plans.filter(p => p.status !== 'done' && ((p.scope === 'month' && p.month === y + '-' + pad(m + 1)) || (p.scope === 'year' && p.year === y))) : [];
+    if (loose.length) {
+      root.append(h('section', { class: 'panel' }, h('h2', null, 'Still to schedule'),
+        h('p', { class: 'muted', style: { margin: '-4px 0 8px' } }, ad ? 'Drag one onto a day, or use Set date.' : 'Planned for this month or year. Your manager will set the day.'),
+        loose.map(planRow)));
+    }
+
+    const grid = h('div', { class: 'grid' });
+    for (let i = 0; i < rows * 7; i++) {
+      const d = new Date(y, m, 1 - off + i), key = ymd(d);
+      const list = (by[key] || []).slice().sort((a, b) => (a.kind === 'plan' ? 0 : 1) - (b.kind === 'plan' ? 0 : 1));
+      const cell = h('div', { class: 'cell' + (d.getMonth() === m ? '' : ' out') + (key === today ? ' today' : '') + (key === state.cal.sel ? ' sel' : ''), onclick: () => selectDay(key) });
+      cell.append(h('button', { type: 'button', class: 'num2', 'aria-label': fmtLong.format(d) + ', ' + list.length + (list.length === 1 ? ' event' : ' events'), 'aria-pressed': String(key === state.cal.sel), 'data-fk': 'cd-' + key,
+        onclick: ev => { ev.stopPropagation(); selectDay(key); } }, String(d.getDate())));
+      const evs = h('div', { class: 'evs' });
+      list.slice(0, 3).forEach(e => evs.append(e.kind === 'plan' ? planChip(e.plan, false) : h('span', { class: 'ev ev-' + e.kind }, EV_ICON[e.kind] + ' ' + evText(e))));
+      if (list.length > 3) evs.append(h('span', { class: 'more' }, '+' + (list.length - 3) + ' more'));
+      const dots = h('div', { class: 'dots', 'aria-hidden': 'true' });
+      list.slice(0, 6).forEach(e => dots.append(h('span', { class: 'dot ev-' + e.kind })));
+      cell.append(evs, dots);
+      attachDrop(cell, id => moveToDay(id, key));
+      grid.append(cell);
+    }
+
+    const sel = state.cal.sel, dayList = (by[sel] || []).slice().sort((a, b) => (a.kind === 'plan' ? 0 : 1) - (b.kind === 'plan' ? 0 : 1) || a.kind.localeCompare(b.kind));
+    const sheet = h('aside', { class: 'panel', 'aria-label': 'Events on the selected day' }, h('h2', null, fmtLong.format(fromYmd(sel))));
+    if (!dayList.length) sheet.append(h('p', { class: 'muted' }, 'Nothing on this day.'));
+    dayList.forEach(e => {
+      if (e.kind === 'plan') { sheet.append(planRow(e.plan)); return; }
+      sheet.append(h('div', { class: 'evrow ev-' + e.kind },
+        h('span', { class: 'ico' }, EV_ICON[e.kind]),
+        h('span', { class: 'grow' }, h('b', null, e.c.title), state.me.admin ? h('span', { class: 'sub2' }, staffName(e.s)) : null, h('span', { class: 'sub2' }, EV_LABEL[e.kind] + (e.kind === 'sched' && e.r.status === 'in_progress' ? ' (in progress)' : ''))),
+        state.me.admin && h('button', { class: 'btn small', 'data-fk': 'ev-' + e.s.id + '-' + e.r.id + '-' + e.kind, onclick: () => openRecords(e.s.id, e.c.id) }, 'Records')));
+    });
+    if (ad) sheet.append(h('div', { style: { marginTop: '10px' } }, h('button', { class: 'btn small', 'data-fk': 'plan-here', onclick: () => openPlanEditor(null, sel) }, 'Plan on this day')));
+    if (ad && state.plans.length) sheet.append(h('p', { class: 'muted', style: { margin: '12px 0 0', fontSize: '12.5px' } }, 'Drag a plan onto another day to reschedule it. On a phone, use Move.'));
+    root.append(h('div', { class: 'cols' }, h('section', null, head, h('div', { class: 'dow', 'aria-hidden': 'true' }, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => h('span', null, d))), grid), sheet));
+    return root;
+  }
+
+  function yearView() {
+    const ad = isAdmin(), y = state.cal.y, showPlans = state.cal.kinds.has('plan');
+    const evs = buildEvents().filter(e => e.date.slice(0, 4) === String(y));
+    const root = h('div', { style: { display: 'grid', gap: '16px' } });
+    const nav = (label, aria, n, fk) => h('button', { class: 'btn small', 'aria-label': aria, 'data-fk': fk, onclick: () => { state.cal.y += n; render(); } }, label);
+    root.append(h('div', { class: 'cal-head', style: { marginBottom: '0' } }, h('h2', { class: 'month-label' }, String(y)), h('div', { class: 'row' },
+      nav('←', 'Previous year', -1, 'y-prev'),
+      h('button', { class: 'btn small', 'data-fk': 'y-now', onclick: () => { state.cal.y = new Date().getFullYear(); render(); } }, 'This year'),
+      nav('→', 'Next year', 1, 'y-next'))));
+    const yearLoose = showPlans ? state.plans.filter(p => p.status !== 'done' && p.scope === 'year' && p.year === y) : [];
+    const strip = h('section', { class: 'panel yr-strip' }, h('h2', null, 'Sometime in ' + y),
+      yearLoose.length ? yearLoose.map(planRow) : h('p', { class: 'muted', style: { margin: '0' } }, ad ? 'Plans that need doing this year, without a month yet, sit here. Drag one in from a month.' : 'Nothing is planned for the year without a month.'));
+    attachDrop(strip, id => moveToYear(id, y));
+    root.append(strip);
+    const cards = h('div', { class: 'ycards' });
+    for (let mi = 0; mi < 12; mi++) {
+      const key = y + '-' + pad(mi + 1);
+      const dated = showPlans ? state.plans.filter(p => p.scope === 'date' && p.date.startsWith(key)).sort((a, b) => a.date.localeCompare(b.date)) : [];
+      const monthLoose = showPlans ? state.plans.filter(p => p.scope === 'month' && p.month === key) : [];
+      const exp = evs.filter(e => e.kind === 'exp' && e.date.startsWith(key)).length, sess = evs.filter(e => e.kind === 'sched' && e.date.startsWith(key)).length;
+      const card = h('section', { class: 'panel ycard' },
+        h('div', { class: 'row between' }, h('button', { class: 'linkbtn', 'data-fk': 'ym-' + mi, onclick: () => { state.cal.mode = 'month'; state.cal.m = mi; const d = new Date(y, mi, 1); state.cal.sel = (d.getFullYear() === t0.getFullYear() && mi === t0.getMonth()) ? todayYmd() : ymd(d); render(); } }, MONTHS[mi]),
+          h('span', { class: 'mono muted' }, (dated.length + monthLoose.length) + ' planned')),
+        dated.concat(monthLoose).map(p => h('div', { class: 'plan-line' }, planChip(p, true), p.scope === 'month' && h('span', { class: 'muted' }, 'any day'))),
+        exp > 0 && h('small', { class: 'muted' }, '⚠ ' + exp + (exp === 1 ? ' certificate expires' : ' certificates expire')),
+        sess > 0 && h('small', { class: 'muted' }, '◷ ' + sess + (sess === 1 ? ' session booked' : ' sessions booked')));
+      attachDrop(card, id => moveToMonth(id, key));
+      cards.append(card);
+    }
+    root.append(cards);
+    if (ad) root.append(h('p', { class: 'muted', style: { margin: '0', fontSize: '12.5px' } }, 'Drag a plan onto a month to say it must be done that month, or open a month and drag it onto a day.'));
+    return root;
+  }
+
+  /* ---------- staff directory + profile ---------- */
+  function staffView() {
+    const D = state.D;
+    if (state.profileId && D.smap.has(state.profileId)) {
+      const st = D.smap.get(state.profileId);
+      return h('div', { style: { display: 'grid', gap: '18px' } }, notices(),
+        h('div', null, h('button', { class: 'btn small', 'data-fk': 'back', onclick: () => { state.profileId = null; state.confirm = null; render(); } }, '← All staff')),
+        profileBody(st, false));
+    }
+    state.profileId = null;
+    const wrap = h('div', { style: { display: 'grid', gap: '18px' } }, notices());
+    if (!state.loaded.staff) return wrap;
+    wrap.append(h('div', { class: 'row between' }, h('h2', { class: 'sec-h', style: { margin: '0' } }, 'Staff directory'),
+      h('button', { class: 'btn primary', 'data-fk': 'add-staff', onclick: () => openStaffEditor(null) }, 'Add staff member')));
+    if (!state.staff.length) { wrap.append(note('No staff yet. Add the first staff member to start recording training.')); return wrap; }
+    wrap.append(filterBar(false, null));
+    const list = filteredStaff();
+    const tbody = h('tbody');
+    list.forEach(s => {
+      const mine = D.pairs.filter(p => p.staff.id === s.id && p.st.req);
+      const ok = mine.filter(p => isCompliant(p.st.kind)).length;
+      const alerts = mine.filter(p => ['exp', 'miss', '30', '60', '90'].includes(p.st.kind)).length;
+      tbody.append(h('tr', null,
+        h('td', null, h('button', { class: 'linkbtn', 'data-fk': 'sl-' + s.id, onclick: () => openProfile(s.id) }, staffName(s)), !s.active && h('span', { class: 'tag', style: { marginLeft: '8px' } }, 'Inactive'), s.example && h('span', { class: 'tag', style: { marginLeft: '8px' } }, 'Example')),
+        h('td', null, s.role || '—', h('span', { class: 'sub2' }, s.department)),
+        h('td', null, s.phone || '—', h('span', { class: 'sub2' }, s.email)),
+        h('td', { class: 'num' }, String(mine.length)),
+        h('td', null, mine.length ? pctBar(Math.round(ok / mine.length * 100)) : h('span', { class: 'muted' }, '—')),
+        h('td', { class: 'num' }, alerts ? h('span', { class: 'pill st-30' }, String(alerts)) : '0')));
+    });
+    wrap.append(list.length ? tableWrap(h('table', null, h('thead', null, h('tr', null, h('th', null, 'Name'), h('th', null, 'Role and team'), h('th', null, 'Contact'), h('th', { class: 'num' }, 'Modules'), h('th', null, 'Compliance'), h('th', { class: 'num' }, 'Alerts'))), tbody)) : note('No staff match these filters.'));
+    return wrap;
+  }
+
+  function mineView() {
+    const wrap = h('div', { style: { display: 'grid', gap: '18px' } }, notices());
+    const me = state.D.smap.get(state.me.id);
+    if (!state.me.id || !state.db) wrap.append(note('Sign in to Claude to see your own training.'));
+    else if (state.loaded.staff && state.loaded.training) {
+      if (!me) wrap.append(note('Your profile has not been set up yet. Ask your manager to add you to the register.'));
+      else wrap.append(profileBody(me, true));
+    }
+    return wrap;
+  }
+
+  function profileBody(st, readonly) {
+    const D = state.D, recs = recsOf(st.id), docs = docsOf(st.id), admin = state.me.admin && state.db && !readonly;
+    const mine = D.pairs.filter(p => p.staff.id === st.id);
+    const attn = mine.filter(p => p.st.req && ['exp', 'miss', '30', '60', '90'].includes(p.st.kind));
+    const root = h('div', { style: { display: 'grid', gap: '18px' } });
+    if (readonly && attn.length) {
+      root.append(h('div', { class: 'note alert' }, h('b', null, attn.length === 1 ? '1 item needs your attention: ' : attn.length + ' items need your attention: '),
+        h('span', null, attn.slice(0, 4).map(p => p.course.title + (p.st.kind === 'miss' ? ' (not recorded)' : p.st.kind === 'exp' ? ' (expired)' : ' (' + (p.st.days) + ' days left)')).join('; ') + (attn.length > 4 ? '…' : '')),
+        h('span', null, 'Speak to your manager about renewal.')));
+    }
+    const kv = h('dl', { class: 'kv' },
+      [['Role', st.role || '—'], ['Team', st.department || '—'], ['Phone', st.phone || '—'], ['Email', st.email || '—'], ['Started', st.startDate ? fd(st.startDate) : '—']]
+        .map(x => h('div', null, h('dt', null, x[0]), h('dd', null, x[1]))));
+    root.append(h('section', { class: 'panel' },
+      h('div', { class: 'p-head' },
+        h('div', null, h('h2', { class: 'p-name', style: { margin: '0', fontFamily: 'var(--font-display)' } }, staffName(st)), h('div', { class: 'row', style: { marginTop: '6px' } }, !st.active && h('span', { class: 'tag' }, 'Inactive'), st.example && h('span', { class: 'tag' }, 'Example'))),
+        admin && h('div', { class: 'row' },
+          h('button', { class: 'btn primary', 'data-fk': 'p-addrec', onclick: () => openRecordEditor(st.id, null, null) }, 'Add record'),
+          h('button', { class: 'btn', 'data-fk': 'p-upload', onclick: () => openUploadModal(st.id) }, 'Upload document'),
+          h('button', { class: 'btn', 'data-fk': 'p-remind', onclick: () => copyStaffReminder(st) }, 'Copy reminder'),
+          h('button', { class: 'btn', 'data-fk': 'p-edit', onclick: () => openStaffEditor(st) }, 'Edit profile'))),
+      kv, st.notes && h('p', { class: 'muted', style: { margin: '12px 0 0', overflowWrap: 'anywhere' } }, st.notes)));
+
+    /* modules */
+    const rows = [];
+    state.courses.forEach(c => {
+      const has = recs.some(r => r.courseId === c.id);
+      if (!c.active && !has) return;
+      const cs = cellState(st, c, recs, D.today);
+      if (cs.req || has) rows.push({ c, cs });
+    });
+    const order = { exp: 0, miss: 1, '30': 2, '60': 3, '90': 4, prog: 5, sched: 6, current: 7, na: 8 };
+    rows.sort((a, b) => order[a.cs.kind] - order[b.cs.kind] || a.c.title.localeCompare(b.c.title));
+    const tbody = h('tbody');
+    rows.forEach(({ c, cs }) => {
+      const n = docs.filter(d => recs.some(r => r.id === d.recordId && r.courseId === c.id)).length;
+      tbody.append(h('tr', null,
+        h('td', null, h('b', null, c.title), h('span', { class: 'cat', style: { '--cat': catVar(c), display: 'flex' } }, h('span', { class: 'sw', 'aria-hidden': 'true' }), catOf(c.category).label, !cs.req && ' · not required')),
+        h('td', null, statusPill(cs)),
+        h('td', null, cs.rec && cs.rec.status === 'completed' ? fd(cs.rec.completedOn) : '—'),
+        h('td', null, dueText(cs) || '—'),
+        h('td', null, cs.rec && cs.rec.certNo ? cs.rec.certNo : '—'),
+        h('td', { class: 'num' }, String(n)),
+        admin && h('td', null, h('button', { class: 'btn small', 'data-fk': 'pm-' + c.id, onclick: () => openRecords(st.id, c.id) }, 'Records'))));
+    });
+    root.append(h('section', null, h('h2', { class: 'sec-h' }, 'Training modules'),
+      rows.length ? tableWrap(h('table', null, h('thead', null, h('tr', null, h('th', null, 'Module'), h('th', null, 'Status'), h('th', null, 'Completed'), h('th', null, 'Due'), h('th', null, 'Certificate no.'), h('th', { class: 'num' }, 'Files'), admin && h('th', null, ''))), tbody))
+        : note('No training modules are assigned yet.')));
+
+    /* history */
+    const hist = recs.slice().sort((a, b) => (b.completedOn || b.scheduledFor || '').localeCompare(a.completedOn || a.scheduledFor || ''));
+    if (hist.length) {
+      const hb = h('tbody');
+      hist.forEach(r => {
+        const c = D.cmap.get(r.courseId);
+        hb.append(h('tr', null, h('td', null, c ? c.title : 'Removed course'), h('td', null, STATUS_LABEL[r.status]),
+          h('td', null, r.status === 'completed' ? fd(r.completedOn) : fd(r.scheduledFor) || '—'), h('td', null, r.expiresOn ? fd(r.expiresOn) : r.status === 'completed' ? 'No expiry' : '—'), h('td', null, r.certNo || '—'),
+          admin && h('td', null, h('button', { class: 'btn small', 'data-fk': 'ph-' + r.id, onclick: () => openRecordEditor(st.id, r, r.courseId) }, 'Edit'))));
+      });
+      root.append(h('section', null, h('h2', { class: 'sec-h' }, 'Record history'),
+        tableWrap(h('table', null, h('thead', null, h('tr', null, h('th', null, 'Module'), h('th', null, 'Status'), h('th', null, 'Date'), h('th', null, 'Expires'), h('th', null, 'Certificate no.'), admin && h('th', null, ''))), hb))));
+    }
+
+    /* documents */
+    const dl = h('ul', { class: 'doclist' });
+    docs.slice().sort((a, b) => b.addedOn.localeCompare(a.addedOn)).forEach(d => {
+      const rec = recs.find(r => r.id === d.recordId), c = rec && D.cmap.get(rec.courseId);
+      const confirming = state.confirm === 'doc:' + d.id;
+      dl.append(h('li', null,
+        h('span', { class: 'grow' }, h('a', { href: '/_blob/' + d.id, target: '_blank', rel: 'noopener' }, d.name), h('span', { class: 'sub2 muted', style: { display: 'block', fontSize: '12.5px' } }, DOC_KINDS[d.kind] + (c ? ' · ' + c.title : '') + (d.addedOn ? ' · added ' + fd(d.addedOn) : '') + (d.size ? ' · ' + Math.max(1, Math.round(d.size / 1024)) + ' KB' : ''))),
+        admin && !confirming && h('button', { class: 'btn quiet small', 'data-fk': 'dd-' + d.id, onclick: () => { state.confirm = 'doc:' + d.id; render(); } }, 'Delete'),
+        admin && confirming && h('span', { class: 'confirm' }, h('p', null, 'Delete this file for good?'),
+          h('button', { class: 'btn danger small', 'data-fk': 'ddy-' + d.id, onclick: () => deleteDoc(st.id, d) }, 'Delete file'),
+          h('button', { class: 'btn small', 'data-fk': 'ddn-' + d.id, onclick: () => { state.confirm = null; render(); } }, 'Keep it'))));
+    });
+    root.append(h('section', { class: 'panel' }, h('h2', null, 'Documents'),
+      docs.length ? dl : h('p', { class: 'muted' }, 'No certificates or training materials are attached yet.' + (admin && !state.assets ? ' File uploads are not available in this view.' : ''))));
+    return root;
+  }
+
+  /* ---------- courses ---------- */
+  function coursesView() {
+    const D = state.D, wrap = h('div', { style: { display: 'grid', gap: '18px' } }, notices());
+    if (!state.loaded.courses) return wrap;
+    wrap.append(h('div', { class: 'row between' }, h('h2', { class: 'sec-h', style: { margin: '0' } }, 'Courses'),
+      h('button', { class: 'btn primary', 'data-fk': 'add-course', onclick: () => openCourseEditor(null) }, 'Add course')));
+    if (!state.courses.length) { wrap.append(note('No courses yet. Add a course and set how long its certificate stays valid.')); return wrap; }
+    const sums = summarize(D.pairs, p => p.course.id);
+    const tbody = h('tbody');
+    state.courses.slice().sort((a, b) => CATS.findIndex(x => x.id === a.category) - CATS.findIndex(x => x.id === b.category) || a.title.localeCompare(b.title)).forEach(c => {
+      const o = sums[c.id];
+      tbody.append(h('tr', null,
+        h('td', null, h('b', null, c.title), !c.active && h('span', { class: 'tag', style: { marginLeft: '8px' } }, 'Archived'), c.example && h('span', { class: 'tag', style: { marginLeft: '8px' } }, 'Example'), c.provider && h('span', { class: 'sub2' }, c.provider)),
+        h('td', null, h('span', { class: 'cat', style: { '--cat': catVar(c) } }, h('span', { class: 'sw', 'aria-hidden': 'true' }), catOf(c.category).label)),
+        h('td', null, c.validity ? c.validity + ' months' : 'No expiry'),
+        h('td', null, c.required ? (c.appliesTo.length ? c.appliesTo.join(', ') : 'All staff') : 'Optional'),
+        h('td', null, o ? pctBar(pct(o)) : h('span', { class: 'muted' }, '—')),
+        h('td', null, h('button', { class: 'btn small', 'data-fk': 'ec-' + c.id, onclick: () => openCourseEditor(c) }, 'Edit'))));
+    });
+    wrap.append(tableWrap(h('table', null, h('thead', null, h('tr', null, h('th', null, 'Course'), h('th', null, 'Category'), h('th', null, 'Valid for'), h('th', null, 'Required for'), h('th', null, 'Compliance'), h('th', null, ''))), tbody)));
+    return wrap;
+  }
+
+  /* ---------- reports ---------- */
+  function reportData() {
+    const D = state.D;
+    const grp = fn => { const m = summarize(D.pairs, fn); return Object.keys(m).sort().map(k => ({ label: k, o: m[k] })); };
+    const overall = summarize(D.pairs, () => 'all').all || { req: 0, ok: 0, exp: 0, soon: 0, miss: 0 };
+    const byCat = CATS.map(c => ({ label: c.label, o: summarize(D.pairs, p => p.course.category)[c.id] })).filter(r => r.o);
+    const gaps = D.pairs.filter(p => p.st.req && !isCompliant(p.st.kind)).sort((a, b) => staffName(a.staff).localeCompare(staffName(b.staff)) || a.course.title.localeCompare(b.course.title));
+    return { overall, byCat, byDept: grp(p => p.staff.department || 'Unassigned'), byRole: grp(p => p.staff.role || 'No role'), byCourse: grp(p => p.course.title), gaps };
+  }
+  function repTable(title, label, rows) {
+    const tbody = h('tbody');
+    rows.forEach(r => tbody.append(h('tr', null, h('td', null, r.label), h('td', { class: 'num' }, String(r.o.req)), h('td', { class: 'num' }, String(r.o.ok)), h('td', null, pctBar(pct(r.o))), h('td', { class: 'num' }, String(r.o.soon)), h('td', { class: 'num' }, String(r.o.exp)), h('td', { class: 'num' }, String(r.o.miss)))));
+    return h('section', null, h('h2', { class: 'sec-h' }, title),
+      rows.length ? tableWrap(h('table', null, h('thead', null, h('tr', null, h('th', null, label), h('th', { class: 'num' }, 'Required'), h('th', { class: 'num' }, 'Certified'), h('th', null, 'Certified %'), h('th', { class: 'num' }, 'Expiring'), h('th', { class: 'num' }, 'Expired'), h('th', { class: 'num' }, 'Missing'))), tbody)) : note('No required courses to report on.'));
+  }
+  function reportsView() {
+    const wrap = h('div', { style: { display: 'grid', gap: '18px' } }, notices());
+    if (!state.loaded.staff || !state.loaded.courses || !state.loaded.training) return wrap;
+    const R = reportData(), p = pct(R.overall);
+    wrap.append(h('div', { class: 'row between' }, h('div', null, h('h2', { class: 'sec-h', style: { margin: '0' } }, 'Compliance report'), h('span', { class: 'muted' }, 'As at ' + fd(state.D.today) + ', active staff and active courses only')),
+      h('div', { class: 'row' }, h('button', { class: 'btn primary', 'data-fk': 'r-html', onclick: downloadReportHtml }, 'Download audit report'), h('button', { class: 'btn', 'data-fk': 'r-csv', onclick: downloadCsv }, 'Download full data (CSV)'))));
+    wrap.append(h('div', { class: 'tiles' },
+      h('div', { class: 'tile static t-ok' }, h('b', null, p == null ? '–' : p + '%'), h('span', null, 'Required certifications held')),
+      h('div', { class: 'tile static' }, h('b', null, String(R.overall.req)), h('span', null, 'Required, in total')),
+      h('div', { class: 'tile static t-30' }, h('b', null, String(R.overall.soon)), h('span', null, 'Expiring within 90 days')),
+      h('div', { class: 'tile static t-exp' }, h('b', null, String(R.overall.exp)), h('span', null, 'Expired')),
+      h('div', { class: 'tile static t-miss' }, h('b', null, String(R.overall.miss)), h('span', null, 'Missing'))));
+    wrap.append(repTable('By operational category', 'Category', R.byCat), repTable('By team', 'Team', R.byDept), repTable('By role', 'Role', R.byRole), repTable('By course', 'Course', R.byCourse));
+    const gb = h('tbody');
+    R.gaps.forEach(g => gb.append(h('tr', null, h('td', null, staffName(g.staff), h('span', { class: 'sub2' }, g.staff.role)), h('td', null, g.course.title), h('td', null, statusPill(g.st)), h('td', null, dueText(g.st)))));
+    wrap.append(h('section', null, h('h2', { class: 'sec-h' }, 'Gaps to close'), R.gaps.length ? tableWrap(h('table', null, h('thead', null, h('tr', null, h('th', null, 'Person'), h('th', null, 'Course'), h('th', null, 'Status'), h('th', null, 'Detail'))), gb)) : note('No gaps. Every required certification is held and in date.')));
+    return wrap;
+  }
+  const csvCell = c => { let t = String(c == null ? '' : c); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const STATUS_WORD = { current: 'Current', '90': 'Expires within 90 days', '60': 'Expires within 60 days', '30': 'Expires within 30 days', exp: 'Expired', prog: 'In progress', sched: 'Scheduled', miss: 'Missing', na: 'Not required' };
+  async function downloadCsv() {
+    if (!state.dl) return toast('Downloads are not available in this view.');
+    const rows = [['Staff member', 'Role', 'Team', 'Course', 'Category', 'Required', 'Status', 'Completed on', 'Expires on', 'Days left', 'Certificate no.']];
+    state.D.pairs.slice().sort((a, b) => staffName(a.staff).localeCompare(staffName(b.staff)) || a.course.title.localeCompare(b.course.title)).forEach(p => {
+      const r = p.st.rec;
+      rows.push([staffName(p.staff), p.staff.role, p.staff.department, p.course.title, catOf(p.course.category).label, p.st.req ? 'Yes' : 'No', STATUS_WORD[p.st.kind],
+        r && r.status === 'completed' ? r.completedOn : '', r && r.expiresOn ? r.expiresOn : '', p.st.days == null ? '' : p.st.days, r ? r.certNo : '']);
+    });
+    await saveFile('training-register-' + state.D.today + '.csv', '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n'), 'Data file saved.');
+  }
+  async function saveFile(filename, data, okMsg) {
+    try { await state.dl.save({ filename, data }); toast(okMsg); }
+    catch (e) { toast(e && e.code === 'declined' ? 'Download cancelled.' : 'Could not save the file.'); }
+  }
+  async function downloadReportHtml() {
+    if (!state.dl) return toast('Downloads are not available in this view.');
+    const R = reportData(), p = pct(R.overall);
+    const tbl = (label, rows) => '<table><thead><tr><th>' + esc(label) + '</th><th class="n">Required</th><th class="n">Certified</th><th class="n">Certified %</th><th class="n">Expiring</th><th class="n">Expired</th><th class="n">Missing</th></tr></thead><tbody>' +
+      rows.map(r => '<tr><td>' + esc(r.label) + '</td><td class="n">' + r.o.req + '</td><td class="n">' + r.o.ok + '</td><td class="n">' + pct(r.o) + '%</td><td class="n">' + r.o.soon + '</td><td class="n">' + r.o.exp + '</td><td class="n">' + r.o.miss + '</td></tr>').join('') + '</tbody></table>';
+    const gaps = R.gaps.length ? '<table><thead><tr><th>Person</th><th>Role</th><th>Course</th><th>Status</th><th>Detail</th></tr></thead><tbody>' +
+      R.gaps.map(g => '<tr><td>' + esc(staffName(g.staff)) + '</td><td>' + esc(g.staff.role) + '</td><td>' + esc(g.course.title) + '</td><td>' + esc(STATUS_WORD[g.st.kind]) + '</td><td>' + esc(dueText(g.st)) + '</td></tr>').join('') + '</tbody></table>' : '<p>No gaps. Every required certification is held and in date.</p>';
+    const html = '<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Training compliance report</title><style>' +
+      'body{font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;color:#0d2230;max-width:960px;margin:32px auto;padding:0 20px}h1{font-size:26px;margin:0 0 4px}h2{font-size:17px;margin:28px 0 8px}' +
+      'table{width:100%;border-collapse:collapse;margin:0 0 8px}th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #cedadb;font-size:13px}th{background:#edf3f3;font-size:11px;text-transform:uppercase;letter-spacing:.06em}.n{text-align:right}' +
+      '.big{font-size:44px;font-weight:700;margin:6px 0}.muted{color:#546b7a}</style></head><body><h1>Training compliance report</h1><div class="muted">As at ' + esc(fd(state.D.today)) + '. Active staff and active courses only.</div>' +
+      '<div class="big">' + (p == null ? 'n/a' : p + '%') + '</div><div class="muted">' + R.overall.ok + ' of ' + R.overall.req + ' required certifications held and in date. ' + R.overall.soon + ' expiring within 90 days, ' + R.overall.exp + ' expired, ' + R.overall.miss + ' missing.</div>' +
+      '<h2>By operational category</h2>' + tbl('Category', R.byCat) + '<h2>By team</h2>' + tbl('Team', R.byDept) + '<h2>By role</h2>' + tbl('Role', R.byRole) + '<h2>By course</h2>' + tbl('Course', R.byCourse) + '<h2>Gaps to close</h2>' + gaps + '</body></html>';
+    await saveFile('training-compliance-report-' + state.D.today + '.html', html, 'Audit report saved.');
+  }
+
+  /* ---------- reminders ---------- */
+  const TIER_WORD = { exp: 'Expired', '30': 'Expires within 30 days', '60': 'Expires within 60 days', '90': 'Expires within 90 days' };
+  function itemLine(i) {
+    return i.course.title + ': ' + (i.days < 0 ? 'expired on ' + fd(i.rec.expiresOn) + ' (' + Math.abs(i.days) + ' days ago)' : 'expires on ' + fd(i.rec.expiresOn) + ' (' + (i.days === 0 ? 'today' : 'in ' + i.days + ' days') + ')');
+  }
+  function staffMessage(st, items) {
+    return 'Hi ' + firstName(st) + ',\n\nThese training certificates need renewing:\n\n' + items.map(i => '- ' + itemLine(i)).join('\n') + '\n\nPlease let me know when you have a renewal booked.\n\nThanks' + (state.me.name ? ',\n' + state.me.name : '');
+  }
+  function copyStaffReminder(st) {
+    const items = reminderItems().filter(i => i.staff.id === st.id);
+    if (!items.length) return toast('Nothing is expiring for ' + firstName(st) + '.');
+    copyText(staffMessage(st, items), 'Reminder for ' + staffName(st));
+  }
+  function managementDigest() {
+    const items = reminderItems().sort((a, b) => a.days - b.days);
+    const lines = ['Training certificates needing action, as at ' + fd(state.D.today), ''];
+    ['exp', '30', '60', '90'].forEach(t => {
+      const l = items.filter(i => i.kind === t);
+      if (!l.length) return;
+      lines.push(TIER_WORD[t].toUpperCase() + ' (' + l.length + ')');
+      l.forEach(i => lines.push('- ' + staffName(i.staff) + ': ' + itemLine(i)));
+      lines.push('');
+    });
+    const miss = state.D.pairs.filter(p => p.st.req && p.st.kind === 'miss');
+    if (miss.length) { lines.push('REQUIRED BUT NOT RECORDED (' + miss.length + ')'); miss.forEach(p => lines.push('- ' + staffName(p.staff) + ': ' + p.course.title)); }
+    return lines.join('\n');
+  }
+  function remindersView() {
+    const wrap = h('div', { style: { display: 'grid', gap: '18px' } }, notices());
+    if (!state.loaded.training) return wrap;
+    const items = reminderItems().sort((a, b) => a.days - b.days);
+    wrap.append(h('div', { class: 'row between' }, h('div', null, h('h2', { class: 'sec-h', style: { margin: '0' } }, 'Expiry reminders'),
+      h('span', { class: 'muted' }, 'Certificates expiring within 90 days, plus any already expired. Copy the message, send it from your own email, then mark it sent.')),
+      h('button', { class: 'btn', 'data-fk': 'digest', onclick: () => copyText(managementDigest(), 'Management digest') }, 'Copy management digest')));
+    if (!items.length) { wrap.append(note('No certificates are expiring in the next 90 days.')); return wrap; }
+    const byPerson = new Map();
+    items.forEach(i => { if (!byPerson.has(i.staff.id)) byPerson.set(i.staff.id, []); byPerson.get(i.staff.id).push(i); });
+    const people = [...byPerson.values()].sort((a, b) => a[0].days - b[0].days);
+    const box = h('section', { class: 'panel rem' });
+    people.forEach(list => {
+      const st = list[0].staff;
+      box.append(h('div', { class: 'rem-person' },
+        h('div', { class: 'row between' }, h('div', null, h('b', null, staffName(st)), h('span', { class: 'sub2 muted', style: { display: 'block', fontSize: '12.5px' } }, st.email ? 'Email: ' + st.email : 'No email on file')),
+          h('button', { class: 'btn small', 'data-fk': 'cm-' + st.id, onclick: () => copyText(staffMessage(st, list), 'Reminder for ' + staffName(st)) }, 'Copy message')),
+        list.map(i => h('div', { class: 'rem-item' },
+          h('span', { class: 'pill st-' + i.kind }, TIER_WORD[i.kind]),
+          h('span', { class: 'grow' }, itemLine(i)),
+          i.sent ? h('span', { class: 'row' }, h('span', { class: 'muted' }, 'Sent ' + fd(i.sent)), h('button', { class: 'btn quiet small', 'data-fk': 'un-' + i.rec.id + i.kind, onclick: () => markSent(i, false) }, 'Undo'))
+            : h('button', { class: 'btn small', 'data-fk': 'ms-' + i.rec.id + i.kind, onclick: () => markSent(i, true) }, 'Mark sent')))));
+    });
+    wrap.append(box);
+    return wrap;
+  }
+  async function markSent(i, on) {
+    try {
+      await saveTraining(i.staff.id, cur => {
+        const r = cur.records[i.rec.id]; if (!r) return;
+        r.reminders = r.reminders && typeof r.reminders === 'object' ? r.reminders : {};
+        if (on) r.reminders[i.kind] = state.D.today; else delete r.reminders[i.kind];
+      });
+    } catch (e) { toast('Could not update the reminder. Try again.'); }
+  }
+
+  /* ---------- saving ---------- */
+  const queues = {};
+  function saveTraining(pid, mut) {
+    const run = async () => {
+      const ref = state.db.doc('training/' + pid), snap = await ref.get();
+      const cur = snap.exists ? JSON.parse(JSON.stringify(snap.data())) : {};
+      cur.records = cur.records && typeof cur.records === 'object' ? cur.records : {};
+      cur.docs = Array.isArray(cur.docs) ? cur.docs : [];
+      mut(cur);
+      await ref.set(cur);
+    };
+    queues[pid] = (queues[pid] || Promise.resolve()).catch(() => {}).then(run);
+    return queues[pid];
+  }
+  async function deleteDoc(pid, d) {
+    try {
+      await saveTraining(pid, cur => { cur.docs = cur.docs.filter(x => x.id !== d.id); });
+      if (state.assets) { try { await state.assets.delete(d.id); } catch (e) { /* file may already be gone */ } }
+      state.confirm = null; toast('File deleted.'); render();
+    } catch (e) { toast('Could not delete the file. Try again.'); }
+  }
+
+  /* ---------- modal ---------- */
+  let escHandler = null;
+  function closeModal() {
+    $('modal-root').replaceChildren();
+    if (escHandler) { document.removeEventListener('keydown', escHandler); escHandler = null; }
+    const f = state.lastFocus; state.lastFocus = null;
+    if (f && document.contains(f)) f.focus();
+  }
+  function openModal(titleText, body, opts) {
+    opts = opts || {};
+    if (!$('modal-root').firstChild) state.lastFocus = document.activeElement;
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    const panel = h('div', { class: 'modal' + (opts.wide ? ' wide' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'm-title' }, h('h2', { id: 'm-title', class: 'modal-title' }, titleText), body);
+    panel.addEventListener('keydown', e => {
+      if (e.key !== 'Tab') return;
+      const f = [...panel.querySelectorAll('button, input, select, textarea, a[href]')].filter(x => !x.disabled && x.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+    const overlay = h('div', { class: 'overlay' }, panel);
+    overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+    escHandler = e => { if (e.key === 'Escape') closeModal(); };
+    document.addEventListener('keydown', escHandler);
+    $('modal-root').replaceChildren(overlay);
+    const first = opts.focus || panel.querySelector('input:not([type="hidden"]), select, textarea, button');
+    if (first) first.focus();
+  }
+  const fld = (id, label, control, hint, cls) => h('div', { class: 'field' + (cls ? ' ' + cls : '') }, h('label', { for: id }, label), control, hint && h('small', null, hint));
+  const optionsOf = (list, sel) => list.map(o => h('option', { value: o[0], selected: o[0] === sel }, o[1]));
+
+  /* ---------- staff editor ---------- */
+  function openStaffEditor(st) {
+    if (!state.db) return;
+    const edit = !!st, linked = edit && /^u_/.test(st.id);
+    let mode = edit ? (linked ? 'linked' : 'manual') : 'link', picked = null;
+    const v = st || { name: '', role: '', department: '', phone: '', email: '', startDate: '', active: true, assigned: [], notes: '' };
+    const err = h('p', { class: 'form-error', role: 'alert' });
+    const fail = (m, el) => { err.textContent = m; if (el) el.focus(); return false; };
+    const name = h('input', { id: 's-name', type: 'text', maxlength: '100', value: v.name, autocomplete: 'off' });
+    const nameFld = fld('s-name', 'Full name', name, null, 'span2');
+    const role = h('input', { id: 's-role', type: 'text', maxlength: '80', value: v.role, list: 's-roles', placeholder: 'e.g. Dock hand' });
+    const roles = h('datalist', { id: 's-roles' }, rolesList().map(r => h('option', { value: r })));
+    const dept = h('input', { id: 's-dept', type: 'text', maxlength: '80', value: v.department, list: 's-depts', placeholder: 'e.g. Dock team' });
+    const depts = h('datalist', { id: 's-depts' }, [...new Set(state.staff.map(s => s.department).filter(Boolean))].map(r => h('option', { value: r })));
+    const phone = h('input', { id: 's-phone', type: 'tel', maxlength: '40', value: v.phone });
+    const email = h('input', { id: 's-email', type: 'email', maxlength: '120', value: v.email });
+    const start = h('input', { id: 's-start', type: 'date', value: v.startDate });
+    const active = h('input', { id: 's-active', type: 'checkbox', checked: v.active });
+    const notes = h('textarea', { id: 's-notes', maxlength: '600' }, v.notes);
+    const boxes = state.courses.filter(c => c.active || v.assigned.includes(c.id)).map(c => h('label', null, h('input', { type: 'checkbox', value: c.id, checked: v.assigned.includes(c.id) }), h('span', null, c.title, c.required && !c.appliesTo.length ? ' (already required for everyone)' : '')));
+    const search = h('input', { id: 's-search', type: 'search', placeholder: 'Search colleagues by name', autocomplete: 'off' });
+    const results = h('div', { class: 'results' });
+    const pickedLine = h('p', { class: 'muted', style: { margin: '6px 0 0' } });
+    const linkBox = h('div', { class: 'field span2' }, h('label', { for: 's-search' }, 'Colleague'), search, results, pickedLine,
+      h('small', null, 'Linked staff can sign in and see their own training. Use “Add by name” for people without a Claude account.'));
+    const segBtn = (m, label) => h('button', { type: 'button', 'aria-pressed': String(mode === m), onclick: () => { mode = m; sync(); } }, label);
+    const seg = h('div', { class: 'seg span2', role: 'group', 'aria-label': 'How to add' }, segBtn('link', 'Link a colleague'), segBtn('manual', 'Add by name'));
+    function sync() {
+      [...seg.children].forEach((b, i) => b.setAttribute('aria-pressed', String(mode === (i === 0 ? 'link' : 'manual'))));
+      linkBox.hidden = mode !== 'link'; nameFld.hidden = mode === 'link' && !picked && true;
+      nameFld.hidden = mode === 'link';
+      nameFld.querySelector('label').textContent = mode === 'linked' ? 'Display name (optional)' : 'Full name';
+      pickedLine.textContent = picked ? 'Selected: ' + picked.name : '';
+    }
+    search.addEventListener('input', async () => {
+      const q = search.value.trim(); results.replaceChildren();
+      if (!q || !state.userNs) return;
+      const hits = await state.userNs.search(q);
+      if (search.value.trim() !== q) return;
+      if (!hits.length) { results.append(h('p', { class: 'muted', style: { margin: '4px 0' } }, 'No match. Colleagues must be in your organization. Otherwise use “Add by name”.')); return; }
+      hits.forEach(p => results.append(h('button', { type: 'button', onclick: () => { picked = { id: p.id, name: p.name }; state.names[p.id] = p.name; results.replaceChildren(); sync(); } }, p.name)));
+    });
+    const del = h('div');
+    if (edit) {
+      const delBtn = h('button', { class: 'btn quiet', type: 'button', onclick: () => {
+        del.replaceChildren(h('div', { class: 'confirm' }, h('p', null, 'Remove ' + staffName(st) + ' and all their records and files? Marking them inactive keeps the history.'),
+          h('button', { class: 'btn danger small', type: 'button', onclick: () => removeStaff(st) }, 'Remove for good'), h('button', { class: 'btn small', type: 'button', onclick: () => del.replaceChildren(delBtn) }, 'Keep'))); } }, 'Remove from register');
+      del.append(delBtn);
+    }
+    const saveBtn = h('button', { class: 'btn primary', type: 'submit' }, edit ? 'Save changes' : 'Add staff member');
+    const form = h('form', { novalidate: true },
+      h('div', { class: 'form-grid' }, !edit && seg, !edit && linkBox, nameFld,
+        fld('s-role', 'Role', role, 'Courses can be required by role.'), fld('s-dept', 'Team', dept),
+        fld('s-phone', 'Phone', phone), fld('s-email', 'Email', email), fld('s-start', 'Start date', start),
+        h('div', { class: 'field check' }, active, h('label', { for: 's-active' }, 'Active staff member')),
+        h('div', { class: 'field span2' }, h('span', { class: 'lbl' }, 'Extra assigned courses'), h('div', { class: 'checks' }, boxes.length ? boxes : h('span', { class: 'muted' }, 'Add courses first.')), h('small', null, 'Assign courses beyond what their role already requires.')),
+        fld('s-notes', 'Notes', notes, null, 'span2')),
+      roles, depts, err, h('div', { class: 'modal-actions', style: { justifyContent: 'space-between' } }, del, h('span', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Cancel'), saveBtn)));
+    form.addEventListener('submit', async e => {
+      e.preventDefault(); err.textContent = '';
+      if (!edit && mode === 'link' && !picked) return fail('Search for a colleague and select them, or choose Add by name.', search);
+      if ((mode === 'manual' || (edit && !linked)) && !name.value.trim()) return fail('Enter the staff member’s name.', name);
+      const pid = edit ? st.id : mode === 'link' ? picked.id : 'm_' + rid();
+      if (!edit && state.D.smap.has(pid)) return fail('That person is already in the register.');
+      const data = { name: mode === 'link' ? '' : name.value.trim(), role: role.value.trim(), department: dept.value.trim(), phone: phone.value.trim(), email: email.value.trim(),
+        startDate: start.value, active: active.checked, assigned: boxes.map(b => b.firstChild).filter(i => i.checked).map(i => i.value), notes: notes.value.trim() };
+      if (edit && st.example) data.example = true;
+      saveBtn.disabled = true;
+      try { await state.db.doc('staff/' + pid).set(data); toast(edit ? 'Profile saved.' : 'Staff member added.'); closeModal(); if (!edit) state.profileId = pid; render(); }
+      catch (ex) { saveBtn.disabled = false; fail('Could not save. Only managers can change the register.'); }
+    });
+    openModal(edit ? 'Edit profile' : 'Add a staff member', form, { wide: true });
+    sync();
+  }
+  async function removeStaff(st) {
+    try {
+      const docs = docsOf(st.id);
+      await state.db.doc('training/' + st.id).delete();
+      await state.db.doc('staff/' + st.id).delete();
+      if (state.assets) for (const d of docs) { try { await state.assets.delete(d.id); } catch (e) { /* ignore */ } }
+      state.profileId = null; closeModal(); toast('Staff member removed.'); render();
+    } catch (e) { toast('Could not remove the staff member. Try again.'); }
+  }
+
+  /* ---------- course editor ---------- */
+  function openCourseEditor(c) {
+    if (!state.db) return;
+    const edit = !!c;
+    const v = c || { title: '', category: 'maritime', validity: 24, provider: '', required: true, appliesTo: [], active: true, notes: '' };
+    const err = h('p', { class: 'form-error', role: 'alert' });
+    const fail = (m, el) => { err.textContent = m; if (el) el.focus(); return false; };
+    const title = h('input', { id: 'c-title', type: 'text', maxlength: '120', value: v.title, autocomplete: 'off' });
+    const cat = h('select', { id: 'c-cat' }, optionsOf(CATS.map(x => [x.id, x.label]), v.category));
+    const valid = h('input', { id: 'c-valid', type: 'number', min: '0', max: '240', step: '1', value: String(v.validity) });
+    const prov = h('input', { id: 'c-prov', type: 'text', maxlength: '120', value: v.provider, placeholder: 'e.g. Training provider' });
+    const req = h('input', { id: 'c-req', type: 'checkbox', checked: v.required });
+    const applies = h('input', { id: 'c-applies', type: 'text', maxlength: '300', value: v.appliesTo.join(', '), list: 'c-roles', placeholder: 'Leave empty for all staff' });
+    const roles = h('datalist', { id: 'c-roles' }, rolesList().map(r => h('option', { value: r })));
+    const active = h('input', { id: 'c-active', type: 'checkbox', checked: v.active });
+    const notes = h('textarea', { id: 'c-notes', maxlength: '400' }, v.notes);
+    const used = edit ? state.D.smap && [...state.training.values()].reduce((n, t) => n + t.recs.filter(r => r.courseId === c.id).length, 0) : 0;
+    const del = h('div');
+    if (edit) {
+      const delBtn = h('button', { class: 'btn quiet', type: 'button', disabled: used > 0, title: used > 0 ? 'Archive it instead: records exist' : '', onclick: () => {
+        del.replaceChildren(h('div', { class: 'confirm' }, h('p', null, 'Delete this course? This cannot be undone.'),
+          h('button', { class: 'btn danger small', type: 'button', onclick: async () => { try { await state.db.doc('courses/' + c.id).delete(); closeModal(); toast('Course deleted.'); } catch (e) { fail('Could not delete the course.'); } } }, 'Delete course'),
+          h('button', { class: 'btn small', type: 'button', onclick: () => del.replaceChildren(delBtn) }, 'Keep'))); } }, 'Delete course');
+      del.append(delBtn, used > 0 && h('small', { class: 'muted', style: { display: 'block' } }, used + ' records use this course. Untick Active to archive it.'));
+    }
+    const saveBtn = h('button', { class: 'btn primary', type: 'submit' }, edit ? 'Save changes' : 'Add course');
+    const form = h('form', { novalidate: true },
+      h('div', { class: 'form-grid' }, fld('c-title', 'Course title', title, null, 'span2'), fld('c-cat', 'Category', cat), fld('c-valid', 'Certificate valid for (months)', valid, '0 means it never expires.'),
+        fld('c-prov', 'Provider', prov, null, 'span2'),
+        h('div', { class: 'field check span2' }, req, h('label', { for: 'c-req' }, 'Required for staff')),
+        fld('c-applies', 'Required for these roles', applies, 'Separate roles with commas. Empty means every active staff member.', 'span2'),
+        h('div', { class: 'field check span2' }, active, h('label', { for: 'c-active' }, 'Active (untick to archive)')),
+        fld('c-notes', 'Notes', notes, null, 'span2')),
+      roles, err, h('div', { class: 'modal-actions', style: { justifyContent: 'space-between' } }, del, h('span', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Cancel'), saveBtn)));
+    form.addEventListener('submit', async e => {
+      e.preventDefault(); err.textContent = '';
+      if (!title.value.trim()) return fail('Give the course a title.', title);
+      const vm = valid.value === '' ? 0 : parseInt(valid.value, 10);
+      if (!Number.isInteger(vm) || vm < 0 || vm > 240) return fail('Validity must be a whole number of months from 0 to 240.', valid);
+      const data = { title: title.value.trim(), category: cat.value, validity: vm, provider: prov.value.trim(), required: req.checked,
+        appliesTo: applies.value.split(',').map(x => x.trim()).filter(Boolean), active: active.checked, notes: notes.value.trim() };
+      if (edit && c.example) data.example = true;
+      const id = edit ? c.id : 'c_' + rid();
+      saveBtn.disabled = true;
+      try { await state.db.doc('courses/' + id).set(data); toast(edit ? 'Course saved.' : 'Course added.'); closeModal(); render(); }
+      catch (ex) { saveBtn.disabled = false; fail('Could not save. Only managers can change courses.'); }
+    });
+    openModal(edit ? 'Edit course' : 'Add a course', form, {});
+  }
+
+  /* ---------- records ---------- */
+  function openRecords(pid, courseId) {
+    const st = state.D.smap.get(pid), c = state.D.cmap.get(courseId);
+    if (!st || !c) return;
+    if (!state.me.admin) return;
+    const recs = recsOf(pid).filter(r => r.courseId === courseId).sort((a, b) => (b.completedOn || b.scheduledFor || '').localeCompare(a.completedOn || a.scheduledFor || ''));
+    const cs = cellState(st, c, recsOf(pid), state.D.today);
+    const list = h('div', null);
+    if (!recs.length) list.append(h('p', { class: 'muted' }, 'No records for this course yet.'));
+    recs.forEach(r => list.append(h('div', { class: 'evrow' },
+      h('span', { class: 'grow' }, h('b', null, STATUS_LABEL[r.status]), h('span', { class: 'sub2' }, r.status === 'completed' ? 'Completed ' + fd(r.completedOn) + (r.expiresOn ? ', expires ' + fd(r.expiresOn) : ', no expiry') : (r.scheduledFor ? 'Date ' + fd(r.scheduledFor) : 'No date') + (r.certNo ? '' : ''), r.certNo ? ' · No. ' + r.certNo : '')),
+      h('button', { class: 'btn small', type: 'button', onclick: () => openRecordEditor(pid, r, courseId) }, 'Edit'))));
+    openModal(staffName(st) + ' · ' + c.title, h('div', null,
+      h('div', { class: 'row', style: { marginBottom: '8px' } }, statusPill(cs), h('span', { class: 'muted' }, dueText(cs))), list,
+      h('div', { class: 'modal-actions' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Close'), h('button', { class: 'btn primary', type: 'button', onclick: () => openRecordEditor(pid, null, courseId) }, 'Add record'))), {});
+  }
+
+  function openRecordEditor(pid, rec, courseId) {
+    if (!state.db) return;
+    const st = state.D.smap.get(pid); if (!st) return;
+    const edit = !!rec, today = state.D.today;
+    const courseList = state.courses.filter(c => c.active || (rec && c.id === rec.courseId));
+    if (!courseList.length) return toast('Add a course first.');
+    const v = rec || { courseId: courseId || courseList[0].id, status: 'completed', completedOn: today, scheduledFor: '', expiresOn: '', certNo: '', notes: '' };
+    const err = h('p', { class: 'form-error', role: 'alert' });
+    const fail = (m, el) => { err.textContent = m; if (el) el.focus(); return false; };
+    const course = h('select', { id: 'r-course' }, optionsOf(courseList.map(c => [c.id, c.title]), v.courseId));
+    const status = h('select', { id: 'r-status' }, optionsOf(Object.keys(STATUS_LABEL).map(k => [k, STATUS_LABEL[k]]), v.status));
+    const comp = h('input', { id: 'r-comp', type: 'date', value: v.completedOn });
+    const sched = h('input', { id: 'r-sched', type: 'date', value: v.scheduledFor });
+    const exp = h('input', { id: 'r-exp', type: 'date', value: v.expiresOn });
+    const cert = h('input', { id: 'r-cert', type: 'text', maxlength: '60', value: v.certNo, autocomplete: 'off' });
+    const notes = h('textarea', { id: 'r-notes', maxlength: '400' }, v.notes);
+    const compF = fld('r-comp', 'Completed on', comp), schedF = fld('r-sched', 'Date', sched, 'When it is booked or started.');
+    const expF = fld('r-exp', 'Certificate expires on', exp, 'Leave empty if it never expires.');
+    const recalc = h('button', { class: 'btn quiet small', type: 'button', style: { alignSelf: 'flex-start' } }, 'Work out from course validity');
+    expF.append(recalc);
+    let touched = !!(rec && rec.expiresOn);
+    const curCourse = () => state.D.cmap.get(course.value);
+    function auto() {
+      if (touched) return;
+      const c = curCourse();
+      exp.value = status.value === 'completed' && comp.value && c && c.validity > 0 ? addMonths(comp.value, c.validity) : '';
+    }
+    function vis() { compF.hidden = status.value !== 'completed'; expF.hidden = status.value !== 'completed'; schedF.hidden = status.value === 'completed'; }
+    exp.addEventListener('input', () => { touched = true; });
+    recalc.addEventListener('click', () => { touched = false; auto(); });
+    comp.addEventListener('change', auto); course.addEventListener('change', auto);
+    status.addEventListener('change', () => { vis(); auto(); });
+    if (!edit) auto();
+    vis();
+
+    const kindSel = h('select', { id: 'r-kind' }, optionsOf(Object.keys(DOC_KINDS).map(k => [k, DOC_KINDS[k]]), 'certificate'));
+    const file = h('input', { id: 'r-file', type: 'file', multiple: true, accept: '.pdf,image/*,.txt,.csv,.md' });
+    const removed = new Set();
+    const existing = docsOf(pid).filter(d => rec && d.recordId === rec.id);
+    const docBox = h('ul', { class: 'doclist span2' });
+    function drawDocs() {
+      docBox.replaceChildren(...existing.filter(d => !removed.has(d.id)).map(d => h('li', null,
+        h('span', { class: 'grow' }, h('a', { href: '/_blob/' + d.id, target: '_blank', rel: 'noopener' }, d.name), h('span', { class: 'sub2 muted', style: { display: 'block', fontSize: '12.5px' } }, DOC_KINDS[d.kind])),
+        h('button', { class: 'btn quiet small', type: 'button', onclick: () => { removed.add(d.id); drawDocs(); } }, 'Remove'))));
+    }
+    drawDocs();
+    const attach = state.assets ? h('div', { class: 'form-grid span2' },
+      h('div', { class: 'field span2' }, h('span', { class: 'lbl' }, 'Attached files'), docBox, !existing.length && h('small', null, 'No files attached yet.')),
+      fld('r-kind', 'New file type', kindSel), fld('r-file', 'Attach certificate or card', file, 'PDF, images or text. Up to 20 MB each.')) : h('p', { class: 'muted span2' }, 'File uploads are not available in this view.');
+
+    const saveBtn = h('button', { class: 'btn primary', type: 'submit' }, edit ? 'Save record' : 'Add record');
+    const del = h('div');
+    if (edit) {
+      const delBtn = h('button', { class: 'btn quiet', type: 'button', onclick: () => {
+        del.replaceChildren(h('div', { class: 'confirm' }, h('p', null, 'Delete this record? Attached files are kept on the profile.'),
+          h('button', { class: 'btn danger small', type: 'button', onclick: async () => { try { await saveTraining(pid, cur => { delete cur.records[rec.id]; cur.docs.forEach(d => { if (d.recordId === rec.id) d.recordId = ''; }); }); closeModal(); toast('Record deleted.'); } catch (e) { fail('Could not delete the record.'); } } }, 'Delete record'),
+          h('button', { class: 'btn small', type: 'button', onclick: () => del.replaceChildren(delBtn) }, 'Keep'))); } }, 'Delete record');
+      del.append(delBtn);
+    }
+    const form = h('form', { novalidate: true },
+      h('p', { class: 'muted', style: { margin: '-6px 0 12px' } }, staffName(st)),
+      h('div', { class: 'form-grid' }, fld('r-course', 'Course', course, null, 'span2'), fld('r-status', 'Status', status), compF, schedF, expF, fld('r-cert', 'Certificate or card number', cert), fld('r-notes', 'Notes', notes, null, 'span2'), attach),
+      err, h('div', { class: 'modal-actions', style: { justifyContent: 'space-between' } }, del, h('span', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Cancel'), saveBtn)));
+    form.addEventListener('submit', async e => {
+      e.preventDefault(); err.textContent = '';
+      const stv = status.value;
+      if (stv === 'completed' && !comp.value) return fail('Enter the date it was completed.', comp);
+      if (stv !== 'completed' && !sched.value) return fail('Enter a date for the booking.', sched);
+      if (stv === 'completed' && exp.value && exp.value < comp.value) return fail('The expiry date cannot be before the completion date.', exp);
+      const files = state.assets && file.files ? [...file.files] : [];
+      for (const f of files) if (f.size > 20 * 1024 * 1024) return fail(f.name + ' is over 20 MB.', file);
+      saveBtn.disabled = true;
+      try {
+        const added = [];
+        for (const f of files) { const r = await state.assets.upload(f); added.push({ id: r.id, name: f.name.slice(0, 160), kind: kindSel.value, size: f.size, addedOn: today }); }
+        const id = edit ? rec.id : rid();
+        await saveTraining(pid, cur => {
+          const old = cur.records[id] || {};
+          const next = Object.assign({}, old, { courseId: course.value, status: stv, completedOn: stv === 'completed' ? comp.value : '', scheduledFor: stv === 'completed' ? '' : sched.value,
+            expiresOn: stv === 'completed' ? exp.value : '', certNo: cert.value.trim(), notes: notes.value.trim() });
+          if (old.expiresOn !== next.expiresOn) delete next.reminders;
+          cur.records[id] = next;
+          cur.docs = cur.docs.filter(d => !removed.has(d.id));
+          added.forEach(d => cur.docs.push(Object.assign({}, d, { recordId: id })));
+        });
+        if (state.assets) for (const dId of removed) { try { await state.assets.delete(dId); } catch (x) { /* ignore */ } }
+        toast(edit ? 'Record saved.' : 'Record added.'); closeModal(); render();
+      } catch (ex) { saveBtn.disabled = false; fail('Could not save. Check your connection and that you are a manager, then try again.'); }
+    });
+    openModal(edit ? 'Edit record' : 'Add a record', form, { wide: true });
+  }
+
+  function openUploadModal(pid) {
+    if (!state.assets) return toast('File uploads are not available in this view.');
+    const recs = recsOf(pid), err = h('p', { class: 'form-error', role: 'alert' });
+    const fail = (m, el) => { err.textContent = m; if (el) el.focus(); return false; };
+    const file = h('input', { id: 'u-file', type: 'file', multiple: true, accept: '.pdf,image/*,.txt,.csv,.md' });
+    const kind = h('select', { id: 'u-kind' }, optionsOf(Object.keys(DOC_KINDS).map(k => [k, DOC_KINDS[k]]), 'certificate'));
+    const link = h('select', { id: 'u-link' }, h('option', { value: '' }, 'Not linked to a record'),
+      recs.slice().sort((a, b) => (b.completedOn || b.scheduledFor || '').localeCompare(a.completedOn || a.scheduledFor || '')).map(r => { const c = state.D.cmap.get(r.courseId); return h('option', { value: r.id }, (c ? c.title : 'Removed course') + ' · ' + STATUS_LABEL[r.status] + ' ' + fd(r.completedOn || r.scheduledFor)); }));
+    const saveBtn = h('button', { class: 'btn primary', type: 'submit' }, 'Upload');
+    const form = h('form', { novalidate: true }, h('div', { class: 'form-grid' },
+      fld('u-file', 'Files', file, 'Certificates, completion cards or training materials. PDF, images or text. Up to 20 MB each.', 'span2'), fld('u-kind', 'Type', kind), fld('u-link', 'Attach to record', link)),
+      err, h('div', { class: 'modal-actions' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Cancel'), saveBtn));
+    form.addEventListener('submit', async e => {
+      e.preventDefault(); err.textContent = '';
+      const files = [...(file.files || [])];
+      if (!files.length) return fail('Choose at least one file.', file);
+      for (const f of files) if (f.size > 20 * 1024 * 1024) return fail(f.name + ' is over 20 MB.', file);
+      saveBtn.disabled = true;
+      try {
+        const added = [];
+        for (const f of files) { const r = await state.assets.upload(f); added.push({ id: r.id, name: f.name.slice(0, 160), kind: kind.value, size: f.size, addedOn: state.D.today, recordId: link.value }); }
+        await saveTraining(pid, cur => { added.forEach(d => cur.docs.push(d)); });
+        toast(added.length === 1 ? 'File uploaded.' : added.length + ' files uploaded.'); closeModal(); render();
+      } catch (ex) { saveBtn.disabled = false; fail('Could not upload. Check the file type and your connection, then try again.'); }
+    });
+    openModal('Upload documents', form, {});
+  }
+
+  /* ---------- example data ---------- */
+  async function addExamples() {
+    const T = todayYmd();
+    const V = { lifejacket: 36, vhf: 0, spill: 24, hazsub: 60, travelift: 36, forklift: 60, firstaid: 24, firewarden: 12 };
+    const courses = [
+      ['lifejacket', 'Maritime safety and sea survival', 'maritime', [], 'Approved provider'],
+      ['vhf', 'VHF marine radio operator', 'radio', ['Harbour master', 'Marina supervisor', 'Dock hand'], 'Maritime radio course'],
+      ['spill', 'Oil and fuel spill response', 'environment', ['Dock hand', 'Maintenance technician', 'Marina supervisor'], 'Environmental provider'],
+      ['hazsub', 'Hazardous substances handling', 'environment', ['Maintenance technician', 'Dock hand'], 'Approved provider'],
+      ['travelift', 'Travelift and hardstand operation', 'machinery', ['Maintenance technician', 'Marina supervisor'], 'Equipment supplier'],
+      ['forklift', 'Forklift operation', 'machinery', ['Maintenance technician'], 'Licensed trainer'],
+      ['firstaid', 'Workplace first aid', 'firstaid', [], 'First aid provider'],
+      ['firewarden', 'Fire warden and evacuation', 'other', ['Harbour master', 'Marina supervisor'], 'Fire safety provider']
+    ];
+    const people = [
+      ['aroha', 'Aroha Tane', 'Harbour master', 'Operations', '021 555 0101', { lifejacket: 300, vhf: -500, spill: 200, firstaid: 20, firewarden: 45 }, {}],
+      ['liam', "Liam O'Brien", 'Marina supervisor', 'Operations', '021 555 0102', { lifejacket: 80, vhf: -300, spill: -12, travelift: 500, firstaid: 400, firewarden: 8 }, { spill: ['scheduled', 9] }],
+      ['sione', 'Sione Faleolo', 'Dock hand', 'Dock team', '021 555 0103', { lifejacket: 610, spill: 70, hazsub: 900, firstaid: -40 }, { vhf: ['in_progress', -3] }],
+      ['mia', 'Mia Chen', 'Dock hand', 'Dock team', '021 555 0104', { lifejacket: 25, vhf: -200, spill: 300, hazsub: 55, firstaid: 100 }, {}],
+      ['jack', 'Jack Rowe', 'Maintenance technician', 'Maintenance', '021 555 0105', { lifejacket: 700, spill: 40, hazsub: 1000, travelift: 15, forklift: 400, firstaid: 250 }, {}],
+      ['hemi', 'Hemi Walker', 'Maintenance technician', 'Maintenance', '021 555 0106', { lifejacket: -5, spill: 500, firstaid: 600 }, { travelift: ['scheduled', 14], forklift: ['in_progress', -2] }],
+      ['priya', 'Priya Nair', 'Marina administrator', 'Office', '021 555 0107', { lifejacket: 300, firstaid: 55 }, {}],
+      ['tom', 'Tom Baker', 'Dock hand', 'Dock team', '021 555 0108', {}, { lifejacket: ['scheduled', 6] }]
+    ];
+    try {
+      for (const c of courses) await state.db.doc('courses/ex_' + c[0]).set({ title: c[1], category: c[2], validity: V[c[0]], provider: c[4], required: true, appliesTo: c[3], active: true, notes: '', example: true });
+      let n = 1;
+      for (const p of people) {
+        await state.db.doc('staff/m_ex_' + p[0]).set({ name: p[1], role: p[2], department: p[3], phone: p[4], email: p[0] + '@example.com', startDate: '', active: true, assigned: [], notes: '', example: true });
+        const records = {};
+        Object.keys(p[5]).forEach(k => {
+          const exp = V[k] ? addDays(T, p[5][k]) : '';
+          records['r_ex' + (n++)] = { courseId: 'ex_' + k, status: 'completed', completedOn: V[k] ? addMonths(exp, -V[k]) : addDays(T, p[5][k]), scheduledFor: '', expiresOn: exp, certNo: 'EX-' + (1000 + n * 7), notes: '' };
+        });
+        Object.keys(p[6]).forEach(k => { records['r_ex' + (n++)] = { courseId: 'ex_' + k, status: p[6][k][0], completedOn: '', scheduledFor: addDays(T, p[6][k][1]), expiresOn: '', certNo: '', notes: '' }; });
+        await state.db.doc('training/m_ex_' + p[0]).set({ records, docs: [], example: true });
+      }
+      const plans = [
+        ['Fire evacuation drill', 'drill', 'ex_firewarden', { scope: 'date', date: addDays(T, 12) }, 'All staff on site', 'planned'],
+        ['Man overboard drill', 'drill', '', { scope: 'date', date: addDays(T, 26) }, 'Dock team', 'planned'],
+        ['Spill response exercise', 'drill', 'ex_spill', { scope: 'month', month: addMonths(T, 1).slice(0, 7) }, 'Dock and maintenance teams', 'planned'],
+        ['Travelift refresher', 'training', 'ex_travelift', { scope: 'year', year: new Date().getFullYear() }, 'Maintenance team', 'planned'],
+        ['First aid refresher intake', 'training', 'ex_firstaid', { scope: 'date', date: addDays(T, 40) }, 'All staff', 'planned'],
+        ['VHF radio check drill', 'drill', 'ex_vhf', { scope: 'date', date: addDays(T, -8) }, 'Operations', 'done']
+      ];
+      let pn = 1;
+      for (const q of plans) await state.db.doc('plans/ex_plan' + (pn++)).set(Object.assign({ title: q[0], kind: q[1], courseId: q[2], date: '', month: '', year: 0, audience: q[4], notes: '', status: q[5], example: true }, q[3]));
+      toast('Example data loaded.');
+    } catch (e) { toast('Could not load the examples. Only managers can add data.'); }
+  }
+  async function removeExamples() {
+    try {
+      for (const s of state.staff.filter(x => x.example)) { await state.db.doc('training/' + s.id).delete(); await state.db.doc('staff/' + s.id).delete(); }
+      for (const c of state.courses.filter(x => x.example)) await state.db.doc('courses/' + c.id).delete();
+      for (const q of state.plans.filter(x => x.example)) await state.db.doc('plans/' + q.id).delete();
+      toast('Example data removed.');
+    } catch (e) { toast('Could not remove the examples. Try again.'); }
+  }
+
+  /* ---------- boot ---------- */
+  async function safeUse(name) {
+    try { if (!window.claude || typeof window.claude.use !== 'function') return null; return await window.claude.use(name); } catch (e) { return null; }
+  }
+  async function init() {
+    render();
+    const res = await Promise.all([safeUse('db'), safeUse('user'), safeUse('downloads'), safeUse('assets')]);
+    const db = res[0], user = res[1];
+    state.dl = res[2]; state.assets = res[3]; state.userNs = user;
+    if (user) {
+      try {
+        state.me.id = await user.id();
+        const me = await user.me();
+        state.me.name = me.name || '';
+        state.me.admin = await user.canEdit();
+        state.me.canWrite = await user.can('data.write');
+      } catch (e) { /* stays anonymous */ }
+    }
+    if (!db) { state.dbAvailable = false; render(); return; }
+    state.db = db; state.dbAvailable = true;
+    const fail = () => { state.error = 'Live updates stopped. Reload the page to reconnect.'; scheduleRender(); };
+    db.collection('staff').onSnapshot(snap => { state.staff = snap.docs.map(d => cleanStaff(d.id, d.data())).filter(Boolean); state.loaded.staff = true; scheduleRender(); }, fail);
+    db.collection('courses').onSnapshot(snap => { state.courses = snap.docs.map(d => cleanCourse(d.id, d.data())).filter(Boolean); state.loaded.courses = true; scheduleRender(); }, fail);
+    db.collection('training').onSnapshot(snap => { state.training = new Map(snap.docs.map(d => [d.id, cleanTraining(d.id, d.data())])); state.loaded.training = true; scheduleRender(); }, fail);
+    db.collection('plans').onSnapshot(snap => { state.plans = snap.docs.map(d => cleanPlan(d.id, d.data())).filter(Boolean); state.loaded.plans = true; scheduleRender(); }, fail);
+    render();
+  }
+  init();
+})();
+</script>
