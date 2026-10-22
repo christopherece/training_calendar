@@ -1,0 +1,13 @@
+{
+  "name": "dockside-training",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Staff training calendar: training sessions, drills, bookings and attendance.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

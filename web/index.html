@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dockside Training</title>
+<meta name="description" content="Staff training calendar: sessions, drills, bookings and attendance.">
+<meta name="theme-color" content="#0B6E99">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>Dockside Training</h1>
+      <p class="sub">Staff training and drills, bookings and attendance in one place.</p>
+    </div>
+    <div class="who" id="who"></div>
+  </header>
+  <div class="ruler" aria-hidden="true"></div>
+  <div class="bar-row" id="bar"></div>
+  <div class="filters" id="filters" role="group" aria-label="Filter by category"></div>
+  <main id="view"><p class="muted pad">Loading…</p></main>
+</div>
+<div id="modal-root"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

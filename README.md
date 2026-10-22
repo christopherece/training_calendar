@@ -1,53 +1,81 @@
-# Training Calendar
+# Dockside Training
 
-Two staff training tools for the marina, built as Claude artifacts.
+A staff training calendar for the marina, hosted on your own PC with Docker.
 
-| App | File | What it does |
-| --- | --- | --- |
-| Training Register | `apps/training-register.html` | Staff directory, courses, training matrix, calendar with planned training and drills (drag to reschedule), 30/60/90-day expiry alerts, reminders, compliance reports, document uploads, manager and staff roles. |
-| Dockside Training | `apps/dockside-training.html` | Shared calendar of training sessions with booking and attendance marking. |
+- **Managers** add training sessions and drills, edit them, and change their dates by dragging them
+  to another day or time. They can also plan something for a month and set the day later, mark
+  attendance, download attendance as a spreadsheet, and invite or remove people.
+- **Staff** sign in to see the calendar, book places, and see their own training history.
+- Everyone's screen updates as soon as something changes.
 
-## How they run
+The server checks every change, so only managers can change the calendar, even if someone tampers
+with the page.
 
-These are the source files of pages published as Claude artifacts. They use the artifact runtime
-(`window.claude.use("db")`, `"user"`, `"assets"` and `"downloads"`) for shared data, sign-in, file
-uploads and downloads. Opened as a plain file in a browser they load but show a "live data is not
-available" notice, because the runtime is not there.
+## Run it
 
-To change one, edit the file here and republish it as the same artifact, declaring the capabilities
-below.
+You need [Docker Desktop](https://www.docker.com/products/docker-desktop/) running on the PC that will host the calendar.
 
-### Training Register capabilities
-
-```json
-{
-  "db": { "rules": [
-    { "path": "staff", "read": "admin", "write": "admin" },
-    { "path": "staff/{self}", "read": "view", "write": "admin" },
-    { "path": "training", "read": "admin", "write": "admin" },
-    { "path": "training/{self}", "read": "view", "write": "admin" },
-    { "path": "courses", "read": "view", "write": "admin" },
-    { "path": "plans", "read": "view", "write": "admin" }
-  ] },
-  "user": { "scopes": ["profile"] },
-  "assets": {},
-  "downloads": true
-}
+```sh
+docker compose up -d --build
 ```
 
-Managers need Editor access to the artifact. Staff need Contributor access. Each staff member is linked
-to their own login so they see only their own records.
+Then open http://localhost:8080 on that PC.
 
-### Dockside Training capabilities
+1. **First visit:** create the first manager account. This option only appears while the calendar has no accounts.
+2. **Invite people:** go to **People** and enter someone's email. You get a sign-up link to send them by text, Teams or email.
+   The link works once, for 14 days. They open it, enter their name and choose a password.
+3. **Forgotten passwords:** go to **People**, click **Password reset link** next to the person, and send them the link.
 
-```json
-{
-  "db": { "rules": [ { "path": "sessions", "read": "view", "write": "admin" } ] },
-  "user": { "scopes": ["profile"] },
-  "downloads": true
-}
+### Let other devices reach it
+
+Staff open `http://<this PC's address>:8080`, for example `http://192.168.1.20:8080`. To find the address,
+run `ipconfig` and look for the IPv4 Address. If phones or other PCs can't connect, allow port 8080
+through Windows Firewall.
+
+Set `PUBLIC_URL` in `docker-compose.yml` to that address so invite and reset links always point to it, then run
+`docker compose up -d` again.
+
+### Update after changing the code
+
+```sh
+docker compose up -d --build
 ```
 
-## Data
+The data stays in the `training-data` Docker volume across updates and restarts.
 
-Both apps keep their data in the artifact database, not in this repository.
+### Back up the data
+
+```sh
+docker compose exec training node -e "new (require('node:sqlite').DatabaseSync)('/data/training.db').exec(\"VACUUM INTO '/data/backup.db'\")"
+docker compose cp training:/data/backup.db ./training-backup.db
+```
+
+To restore a backup, stop the app, copy the file back to `/data/training.db`, and start it again.
+
+## Phone notifications (next step)
+
+The app is already set up to be installed on a phone. Phones only allow push notifications from sites served over
+HTTPS, so before adding them, put the calendar behind HTTPS. Two common ways:
+
+- a reverse proxy such as Caddy, with a certificate your phones trust;
+- a tunnel such as Cloudflare Tunnel.
+
+Once it's on HTTPS, set `COOKIE_SECURE: "1"` in `docker-compose.yml`.
+
+## Run without Docker
+
+You need Node.js 22.13 or newer. There are no packages to install.
+
+```sh
+npm start
+```
+
+The data is stored in `./data/training.db`. Set `PORT`, `DATA_DIR` or `PUBLIC_URL` to change the defaults.
+
+## Files
+
+| Path | What it is |
+| --- | --- |
+| `server.js` | Web server and API: sign-in, invites, roles, calendar data (SQLite) and live updates |
+| `web/` | The app people use in the browser |
+| `Dockerfile`, `docker-compose.yml` | Container setup |

@@ -1,0 +1,19 @@
+services:
+  training:
+    build: .
+    container_name: dockside-training
+    ports:
+      - "8080:8080"
+    volumes:
+      - training-data:/data
+    environment:
+      TZ: Pacific/Auckland
+      # The address staff type to reach the calendar, used in invite and password-reset links,
+      # e.g. "http://192.168.1.20:8080". Left empty, links use whatever address the manager has open.
+      PUBLIC_URL: ""
+      # Set to "1" once the calendar is served over HTTPS (see README).
+      COOKIE_SECURE: "0"
+    restart: unless-stopped
+
+volumes:
+  training-data:
