@@ -5,7 +5,8 @@
   "description": "Staff training calendar: training sessions, drills, bookings and attendance.",
   "main": "server.js",
   "scripts": {
-    "start": "node --use-system-ca --disable-warning=ExperimentalWarning server.js"
+    "start": "node --use-system-ca --disable-warning=ExperimentalWarning server.js",
+    "dev": "node --watch --use-system-ca --disable-warning=ExperimentalWarning server.js --dev"
   },
   "engines": {
     "node": ">=22.15"

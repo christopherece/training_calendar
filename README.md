@@ -107,6 +107,32 @@ The server needs to reach those push services over the internet. If your network
 certificate note under *Today's weather*. Set `PUSH_CONTACT` to a `mailto:` or `https://` address the push services
 can contact about your server (default: `https://www.westhaven.co.nz`).
 
+## Development
+
+The development copy runs next to the real calendar without touching it: it uses **port 8081** and its own data
+(`data-dev/`, or the `training-dev-data` Docker volume). The first visit asks you to create a manager account, just for
+development. Changes to files in `web/` show after a browser refresh. Changes to `server.js` restart the server
+automatically.
+
+**With Node.js** (22.15 or newer), from the project folder:
+
+```sh
+npm run dev
+```
+
+Open http://localhost:8081, or `http://<server address>:8081` from another computer. Stop it with Ctrl+C.
+
+**With Docker**, from the project folder:
+
+```sh
+docker compose -f docker-compose.dev.yml up -d --build
+docker compose -f docker-compose.dev.yml logs -f      # watch it; Ctrl+C stops watching, not the app
+docker compose -f docker-compose.dev.yml down         # stop it
+```
+
+The container runs the code in this folder directly, so there is no need to rebuild after editing. On Windows,
+Docker Desktop may not notice changes to `server.js`; if so, run `docker compose -f docker-compose.dev.yml restart`.
+
 ## Run without Docker
 
 You need Node.js 22.15 or newer. There are no packages to install.

@@ -7,8 +7,10 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
 
-const PORT = +process.env.PORT || 8080;
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+/* `npm run dev` passes --dev: its own data and port, so it can run beside the real calendar without touching it */
+const DEV = process.argv.includes('--dev');
+const PORT = +process.env.PORT || (DEV ? 8081 : 8080);
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, DEV ? 'data-dev' : 'data');
 const WEB_DIR = path.join(__dirname, 'web');
 const SECURE_COOKIE = process.env.COOKIE_SECURE === '1';
 /* the address staff use to reach the calendar, for invite and reset links, e.g. http://192.168.1.20:8080 */
@@ -932,7 +934,7 @@ const server = http.createServer((req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, () => console.log('Dockside Training on http://localhost:' + PORT + ' (data in ' + DATA_DIR + ')'));
+  server.listen(PORT, () => console.log('Dockside Training' + (DEV ? ' (development)' : '') + ' on http://localhost:' + PORT + ' (data in ' + DATA_DIR + ')'));
   const stop = () => { server.close(); db.close(); process.exit(0); };
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);

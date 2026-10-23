@@ -1,0 +1,23 @@
+# Development copy of the calendar, next to the real one:
+#   docker compose -f docker-compose.dev.yml up -d --build
+# It runs the code in this folder (edits show without rebuilding), on port 8081, with its own data.
+services:
+  training-dev:
+    build: .
+    container_name: dockside-training-dev
+    command: ["node", "--watch", "--use-system-ca", "--disable-warning=ExperimentalWarning", "server.js", "--dev"]
+    ports:
+      - "8081:8081"
+    volumes:
+      # this folder's code, live and read-only; the data stays in its own volume
+      - .:/app:ro
+      - training-dev-data:/data
+    environment:
+      TZ: Pacific/Auckland
+      DATA_DIR: /data
+      PUBLIC_URL: ""
+      COOKIE_SECURE: "0"
+    restart: unless-stopped
+
+volumes:
+  training-dev-data:
