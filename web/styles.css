@@ -636,3 +636,10 @@ html { -webkit-tap-highlight-color: transparent; }
   .actions .btn.primary[data-fk="add"]::before { font-size: 16px; letter-spacing: .04em; }
 }
 .type-row .type-supplier { flex: 1 1 200px; }
+
+/* ---------- Send reminder ---------- */
+.field-label { font-weight: 600; font-size: 13px; }
+.remind-to { display: grid; gap: 6px; }
+.remind-to .field.check { font-size: 15px; }
+.remind-to input:disabled + * , .remind-to label:has(input:disabled) { color: var(--muted); }
+.remind-preview { margin: 0; padding: 10px 12px; background: var(--surface-2); border-left: 3px solid var(--sky); font-size: 14px; }

@@ -1168,9 +1168,12 @@ function mineView() {
 
 /* ---------- push notifications on this device ---------- */
 var NOTIFY_LABELS = [
-  ['changes', 'A session I booked is moved or cancelled'],
-  ['reminders', 'Reminder the evening before my sessions, and required ones'],
-  ['new', 'New training or drills are added']
+  ['booked', 'I book a place (a confirmation)'],
+  ['changes', 'A session I booked is moved, cancelled, or my place is removed'],
+  ['reminders', 'Reminders: the evening before and 1 hour before my sessions, and reminders from managers'],
+  ['new', 'New training or drills are added'],
+  ['confirmed', 'A training is confirmed (its status is set to Booked)'],
+  ['bookings', 'Someone books or withdraws from a session', 'manager']
 ];
 function isIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
 function isInstalled() { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
@@ -1313,6 +1316,7 @@ function notifySection() {
   var prefs = state.me.notify || {};
   var list = h('div', { class: 'notify-prefs' });
   NOTIFY_LABELS.forEach(function (n) {
+    if (n[2] === 'manager' && !state.me.admin) return;
     var cb = h('input', { type: 'checkbox', id: 'np-' + n[0], checked: prefs[n[0]] !== false });
     cb.addEventListener('change', async function () {
       var next = Object.assign({}, state.me.notify || {});
@@ -1695,6 +1699,7 @@ function sessionCard(s, opts) {
   }
   if (admin) {
     if (!ended) act.append(h('button', { class: 'btn quiet', 'data-fk': 'mv-' + s.id, onclick: function () { openMoveForm(s); } }, s.unscheduled ? 'Set date' : 'Move'));
+    if (!ended && !s.unscheduled && !isOff(s)) act.append(h('button', { class: 'btn quiet', 'data-fk': 'sr-' + s.id, onclick: function () { openRemindForm(s); } }, 'Send reminder'));
     act.append(h('button', { class: 'btn quiet', 'data-fk': 'ed-' + s.id, onclick: function () { openForm(s); } }, 'Edit'),
       h('button', { class: 'btn quiet', 'data-fk': 'del-' + s.id, onclick: function () { state.confirmDelete = s.id; render(); } }, 'Delete'));
   }
@@ -2093,6 +2098,52 @@ function openMoveForm(s) {
     moveSessions(moves, moves.length > 1 ? 'Moved ' + moves.length + ' in the series.' : (s.unscheduled ? 'Scheduled “' : 'Moved “') + s.title + '” for ' + whenText(t) + '.');
   });
   openModal(form, date);
+}
+
+/* a manager pushes a reminder now: to people booked, to those not booked yet, or to everyone */
+function openRemindForm(s) {
+  if (!isAdmin()) return;
+  state.lastFocus = document.activeElement;
+  var booked = signupsOf(s).filter(function (x) { return x.uid !== state.me.id; }).length;
+  var everyone = Object.keys(state.users).filter(function (k) { return state.users[k].active && k !== state.me.id; }).length;
+  var unbooked = Math.max(0, everyone - booked);
+  var choices = [['booked', 'People booked', booked], ['unbooked', 'People who haven’t booked yet', unbooked], ['everyone', 'Everyone', everyone]];
+  var pick = booked ? 'booked' : s.mandatory ? 'unbooked' : 'everyone';
+  var group = h('div', { class: 'remind-to', role: 'radiogroup', 'aria-label': 'Send to' }, choices.map(function (c) {
+    return h('label', { class: 'field check' },
+      h('input', { type: 'radio', name: 'remind-to', value: c[0], checked: c[0] === pick, disabled: !c[2] }),
+      c[1] + ' (' + c[2] + ')');
+  }));
+  var note = h('input', { id: 'rm-note', type: 'text', maxlength: '140', placeholder: 'e.g. Bring hi-vis and closed shoes' });
+  var preview = h('p', { class: 'remind-preview' });
+  function showPreview() { preview.textContent = 'Reminder: ' + s.title + ' · ' + whenOf(s) + (s.location ? ' · ' + s.location : '') + (note.value.trim() ? ' — ' + note.value.trim() : ''); }
+  note.addEventListener('input', showPreview);
+  showPreview();
+  var err = h('p', { class: 'form-error', role: 'alert' });
+  var send = h('button', { class: 'btn primary', type: 'submit' }, 'Send reminder');
+  var form = h('form', { novalidate: true, 'aria-labelledby': 'm-title' },
+    h('h2', { id: 'm-title', class: 'modal-title' }, 'Send a reminder'),
+    h('p', { class: 'muted', style: { margin: '-8px 0 12px' } }, s.title + ' · ' + whenOf(s)),
+    h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Send to'), group),
+    fld('rm-note', 'Add a note (optional)', note),
+    h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'People will see'), preview),
+    h('p', { class: 'hint-line' }, 'Only people who turned notifications on, and kept reminders switched on, will get it.'),
+    err,
+    h('div', { class: 'modal-actions' }, h('button', { class: 'btn', type: 'button', onclick: closeModal }, 'Cancel'), send));
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var to = (form.querySelector('input[name="remind-to"]:checked') || {}).value;
+    if (!to) { err.textContent = 'Choose who to send it to.'; return; }
+    send.disabled = true;
+    try {
+      var r = await api('POST', '/api/sessions/' + s.id + '/remind', { to: to, note: note.value });
+      closeModal();
+      toast(r.people
+        ? 'Reminder sent to ' + r.people + (r.people === 1 ? ' person' : ' people') + (r.audience > r.people ? '. ' + (r.audience - r.people) + ' haven’t turned notifications on.' : '.')
+        : 'Nobody in that group has notifications turned on yet, so nothing was sent.');
+    } catch (ex) { err.textContent = ex.message; send.disabled = false; }
+  });
+  openModal(form, send);
 }
 
 function openModal(form, focusEl, kind) {

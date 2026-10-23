@@ -425,6 +425,7 @@ route('POST', '/api/batch', 'manager', (req, res, body, p, me) => {
           if (!before) events.push({ kind: 'new', id, after: clean, booked });
           else if ((clean.status === 'cancelled' || clean.status === 'postponed') && before.status !== clean.status) events.push({ kind: clean.status, id, before, after: clean, booked });
           else if (['date', 'endDate', 'month', 'start', 'end'].some(k => (before[k] || '') !== (clean[k] || ''))) events.push({ kind: 'moved', id, before, after: clean, booked });
+          if (before && clean.status === 'booked' && before.status !== 'booked') events.push({ kind: 'confirmed', id, before, after: clean, booked });
         }
       } else if (col === 'signups') {
         if (o.op === 'delete') q('DELETE FROM signups WHERE id = ?').run(id);
@@ -440,6 +441,7 @@ route('POST', '/api/batch', 'manager', (req, res, body, p, me) => {
 
 route('POST', '/api/signups', 'member', (req, res, body, p, me) => {
   const sid = String(body.sessionId || '');
+  let fresh = null;   /* set only when a new booking was made */
   tx(() => {
     const row = q('SELECT data FROM sessions WHERE id = ?').get(sid);
     if (!row) fail(404, 'That session no longer exists.');
@@ -449,17 +451,28 @@ route('POST', '/api/signups', 'member', (req, res, body, p, me) => {
     if (q('SELECT 1 FROM signups WHERE session_id = ? AND user_id = ?').get(sid, me.id)) return;
     if (s.capacity > 0 && q('SELECT COUNT(*) n FROM signups WHERE session_id = ?').get(sid).n >= s.capacity) fail(409, 'Sorry, that session just filled up.');
     q('INSERT INTO signups (id, session_id, user_id, status, at) VALUES (?, ?, ?, ?, ?)').run(sid + '_' + me.id, sid, me.id, 'going', now());
+    fresh = s;
   });
   changed();
+  if (fresh) {
+    notifyUser(me.id, { title: 'You’re booked: ' + fresh.title, body: pushWhen(fresh) + (fresh.location ? ' · ' + fresh.location : ''), url: dayUrl(fresh), tag: 'booked-' + sid }, 'booked');
+    tellManagers(me, sid, fresh, 'booked');
+  }
   return {};
 });
 
 route('DELETE', '/api/signups/:id', 'member', (req, res, body, p, me) => {
-  const su = q('SELECT user_id FROM signups WHERE id = ?').get(p.id);
+  const su = q('SELECT user_id, session_id FROM signups WHERE id = ?').get(p.id);
   if (!su) return {};
   if (su.user_id !== me.id && me.role !== 'manager') fail(403, 'You can only remove your own booking.');
   q('DELETE FROM signups WHERE id = ?').run(p.id);
   changed();
+  const row = q('SELECT data FROM sessions WHERE id = ?').get(su.session_id);
+  if (row) {
+    const s = JSON.parse(row.data);
+    if (su.user_id === me.id) tellManagers(me, su.session_id, s, 'withdrew');
+    else notifyUser(su.user_id, { title: 'Booking removed: ' + s.title, body: 'A manager removed your place on ' + pushWhen(s) + '.', url: dayUrl(s), tag: 'booked-' + su.session_id }, 'changes');
+  }
   return {};
 });
 
@@ -526,7 +539,10 @@ const PUSH_DRY_RUN = process.env.PUSH_DRY_RUN === '1';   /* tests: log notificat
 const REMINDER_HOUR = Math.min(23, Math.max(0, parseInt(process.env.REMINDER_HOUR || '17', 10)));
 /* only the browsers' own push services; a subscription can never make the server call anywhere else */
 const PUSH_HOSTS = [/(^|\.)googleapis\.com$/, /(^|\.)push\.apple\.com$/, /(^|\.)mozilla\.com$/, /(^|\.)mozaws\.net$/, /(^|\.)notify\.windows\.com$/];
-const NOTIFY_KINDS = ['changes', 'reminders', 'new'];
+/* changes: my booked session moved or cancelled · reminders: evening before, 1 hour before, and managers' reminders
+   new: new training added · confirmed: a session's status set to Booked · booked: confirmation when I book
+   bookings (managers): someone booked or withdrew */
+const NOTIFY_KINDS = ['changes', 'reminders', 'new', 'confirmed', 'booked', 'bookings'];
 
 /* the server's push identity: made once, kept in the database so existing subscriptions keep working */
 const VAPID = (function () {
@@ -644,10 +660,18 @@ function newMessage(fresh) {
 function announceChanges(events, actorId) {
   const perUser = new Map();
   for (const e of events) {
-    if (e.kind === 'new') continue;
+    if (e.kind === 'new' || e.kind === 'confirmed') continue;   /* those go to everyone, below */
     for (const uid of e.booked) if (uid !== actorId) { if (!perUser.has(uid)) perUser.set(uid, []); perUser.get(uid).push(e); }
   }
   for (const [uid, evs] of perUser) notifyUser(uid, changeMessage(evs), 'changes');
+  const confirmed = events.filter(e => e.kind === 'confirmed');
+  if (confirmed.length) {
+    const one = confirmed[0].after;
+    const msg = confirmed.length === 1
+      ? { title: 'Confirmed: ' + one.title, body: pushWhen(one) + (one.location ? ' · ' + one.location : '') + ' · Book your place in the calendar.', url: dayUrl(one), tag: 'confirmed-' + confirmed[0].id }
+      : { title: confirmed.length + ' sessions confirmed', body: listTitles(confirmed.map(e => ({ title: e.after.title }))) + '. Book your places in the calendar.', url: '/', tag: 'confirmed' };
+    q('SELECT id FROM users WHERE active = 1 AND id != ?').all(actorId).forEach(u => notifyUser(u.id, msg, 'confirmed'));
+  }
   const fresh = events.filter(e => e.kind === 'new');
   if (fresh.length) {
     const msg = newMessage(fresh);
@@ -659,9 +683,9 @@ function announceChanges(events, actorId) {
    including ones added later that evening */
 function marinaNow() {
   const p = {};
-  new Intl.DateTimeFormat('en-CA', { timeZone: WEATHER.tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' })
+  new Intl.DateTimeFormat('en-CA', { timeZone: WEATHER.tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
     .formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
-  return { date: p.year + '-' + p.month + '-' + p.day, hour: +p.hour };
+  return { date: p.year + '-' + p.month + '-' + p.day, hour: +p.hour, minutes: +p.hour * 60 + +p.minute };
 }
 function nextDay(date) { const d = new Date(date + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); }
 function sendReminders() {
@@ -691,8 +715,47 @@ function sendReminders() {
     notifyUser(uid, msg, 'reminders');
   }
 }
-setInterval(sendReminders, 10 * 60e3).unref();
-setTimeout(sendReminders, 5000).unref();
+/* an hour before: people booked get a short heads-up (each session once a day) */
+function sendHourReminders() {
+  const t = marinaNow();
+  const key = 'hour-' + t.date;
+  q('SELECT id, data FROM sessions').all().map(r => Object.assign({ id: r.id }, JSON.parse(r.data)))
+    .filter(s => !s.example && s.status !== 'cancelled' && s.status !== 'postponed' && s.date && s.date <= t.date && (s.endDate || s.date) >= t.date)
+    .forEach(s => {
+      const [hh, mm] = s.start.split(':').map(Number), until = hh * 60 + mm - t.minutes;
+      if (until <= 0 || until > 65 || q('SELECT 1 FROM reminded WHERE session_id = ? AND day = ?').get(s.id, key)) return;
+      q('INSERT INTO reminded (session_id, day, at) VALUES (?, ?, ?)').run(s.id, key, now());
+      const msg = { title: 'Starting ' + (until > 50 ? 'in 1 hour' : 'in ' + until + ' minutes') + ': ' + s.title, body: s.start + '–' + s.end + (s.location ? ' · ' + s.location : ''), url: '/?day=' + t.date, tag: 'soon-' + s.id };
+      q('SELECT user_id FROM signups WHERE session_id = ?').all(s.id).forEach(r => notifyUser(r.user_id, msg, 'reminders'));
+    });
+}
+function runReminders() { sendReminders(); sendHourReminders(); }
+setInterval(runReminders, 5 * 60e3).unref();
+setTimeout(runReminders, 5000).unref();
+
+/* managers hear when someone books or withdraws */
+function tellManagers(who, sid, s, what) {
+  const taken = q('SELECT COUNT(*) n FROM signups WHERE session_id = ?').get(sid).n;
+  const places = s.capacity > 0 ? taken + ' of ' + s.capacity + ' places taken' : taken + ' booked';
+  const msg = { title: who.name + (what === 'booked' ? ' booked ' : ' withdrew from ') + s.title, body: pushWhen(s) + ' · ' + places + '.', url: dayUrl(s), tag: 'bookings-' + sid };
+  q("SELECT id FROM users WHERE active = 1 AND role = 'manager' AND id != ?").all(who.id).forEach(u => notifyUser(u.id, msg, 'bookings'));
+}
+
+/* a manager's Send reminder: to people booked, to those who have not booked yet, or to everyone */
+route('POST', '/api/sessions/:id/remind', 'manager', (req, res, body, p, me) => {
+  const row = q('SELECT data FROM sessions WHERE id = ?').get(p.id);
+  if (!row) fail(404, 'That session no longer exists.');
+  const s = JSON.parse(row.data);
+  if (!s.date) fail(400, 'Set the day first, then send a reminder.');
+  const booked = q('SELECT user_id FROM signups WHERE session_id = ?').all(p.id).map(r => r.user_id);
+  const everyone = q('SELECT id FROM users WHERE active = 1').all().map(u => u.id);
+  const to = (body.to === 'unbooked' ? everyone.filter(u => !booked.includes(u)) : body.to === 'everyone' ? everyone : booked).filter(u => u !== me.id);
+  const note = str(body.note, 140);
+  const msg = { title: 'Reminder: ' + s.title, body: pushWhen(s) + (s.location ? ' · ' + s.location : '') + (note ? ' — ' + note : ''), url: dayUrl(s), tag: 'remind-' + p.id };
+  let people = 0;
+  to.forEach(u => { if (notifyUser(u, msg, 'reminders')) people++; });
+  return { people, audience: to.length };
+});
 
 function validSubscription(b) {
   let u;
@@ -939,4 +1002,4 @@ if (require.main === module) {
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
 }
-module.exports = { server, encryptPush, vapidAuth, VAPID, sendReminders };
+module.exports = { server, encryptPush, vapidAuth, VAPID, sendReminders, sendHourReminders };
