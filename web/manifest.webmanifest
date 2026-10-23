@@ -1,15 +1,25 @@
 {
-  "name": "Dockside Training",
+  "id": "/",
+  "name": "Westhaven Marina Training Calendar",
   "short_name": "Training",
-  "description": "Staff training and drills, bookings and attendance.",
+  "description": "Westhaven Marina staff training and drills, bookings and attendance.",
+  "lang": "en-NZ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#EEF3F4",
-  "theme_color": "#0B6E99",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#FFFFFF",
+  "theme_color": "#141469",
+  "categories": ["productivity", "business"],
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Agenda", "short_name": "Agenda", "description": "Upcoming training and drills", "url": "./?view=agenda", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "My training", "short_name": "My training", "description": "Your bookings and history", "url": "./?view=mine", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }

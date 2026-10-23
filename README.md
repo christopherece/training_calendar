@@ -52,19 +52,64 @@ docker compose cp training:/data/backup.db ./training-backup.db
 
 To restore a backup, stop the app, copy the file back to `/data/training.db`, and start it again.
 
-## Phone notifications (next step)
+## Today's weather
 
-The app is already set up to be installed on a phone. Phones only allow push notifications from sites served over
-HTTPS, so before adding them, put the calendar behind HTTPS. Two common ways:
+The weather panel beside the calendar comes from [Open-Meteo](https://open-meteo.com/), which is free and needs no account
+or key. The server fetches the forecast at most every 15 minutes and shares it with everyone, so the PC running the calendar
+needs internet access. The panel shows Westhaven by default. To show another place, set `WEATHER_LAT`, `WEATHER_LON` and
+`WEATHER_NAME` in `docker-compose.yml`.
 
-- a reverse proxy such as Caddy, with a certificate your phones trust;
-- a tunnel such as Cloudflare Tunnel.
+If the panel says the forecast isn't available, the server can't reach Open-Meteo. On networks that inspect secure traffic,
+Node.js needs that network's certificate. Copy the certificate file (ask IT for it) next to `docker-compose.yml`, then add:
 
-Once it's on HTTPS, set `COOKIE_SECURE: "1"` in `docker-compose.yml`.
+```yaml
+    volumes:
+      - ./company-ca.crt:/certs/company-ca.crt:ro
+    environment:
+      NODE_EXTRA_CA_CERTS: /certs/company-ca.crt
+```
+
+When running without Docker on Windows, `npm start` already trusts the certificates Windows trusts.
+
+## Phone notifications
+
+Anyone with an account can turn notifications on in **Settings → Notifications**, once on each phone or computer.
+They can choose which of these they get:
+
+- **A session they booked is moved or cancelled.** Several changes saved at once arrive as one notification.
+- **A reminder the evening before**, from 5 pm marina time, for sessions they booked and for required sessions.
+  Set `REMINDER_HOUR` to change the hour (0–23).
+- **New training or drills.** A repeating series arrives as one notification. Example sessions never notify.
+
+The person who makes a change is not notified about it. Tapping a notification opens the calendar on that day. Signing
+out turns notifications off on that device, and removing someone from the team stops all of theirs.
+
+### What phones need
+
+- **HTTPS.** Phones only allow notifications from a secure `https://` address (and from `http://localhost`, for
+  testing on the PC itself). A plain `http://192.168.x.x:8080` address will not work. Two common ways to add HTTPS:
+  - a tunnel such as Cloudflare Tunnel, which gives an address like `https://training.example.co.nz` that also works off site;
+  - a name and certificate from IT, served through a reverse proxy such as Caddy.
+- **iPhone and iPad** (iOS 16.4 or newer): open the calendar in Safari, tap Share, then **Add to Home Screen**. Open it
+  from the new icon, sign in, and turn notifications on in Settings. Safari itself cannot receive them.
+- **Android:** Chrome can turn them on straight from the browser. Adding it to the home screen is optional.
+
+Once it's on HTTPS, set `COOKIE_SECURE: "1"` and `PUBLIC_URL` to the https address in `docker-compose.yml`.
+
+### How it works
+
+The server sends notifications through each browser's own push service (Google for Chrome and Android, Apple for
+iPhone, Mozilla for Firefox, Microsoft for Edge), using the standard Web Push protocol. The message is encrypted so only
+the person's device can read it. The server makes its signing key once and keeps it in the database, so backups keep
+existing subscriptions working. The server only ever sends to those push services, never to other addresses.
+
+The server needs to reach those push services over the internet. If your network inspects secure traffic, see the
+certificate note under *Today's weather*. Set `PUSH_CONTACT` to a `mailto:` or `https://` address the push services
+can contact about your server (default: `https://www.westhaven.co.nz`).
 
 ## Run without Docker
 
-You need Node.js 22.13 or newer. There are no packages to install.
+You need Node.js 22.15 or newer. There are no packages to install.
 
 ```sh
 npm start
@@ -76,6 +121,6 @@ The data is stored in `./data/training.db`. Set `PORT`, `DATA_DIR` or `PUBLIC_UR
 
 | Path | What it is |
 | --- | --- |
-| `server.js` | Web server and API: sign-in, invites, roles, calendar data (SQLite) and live updates |
+| `server.js` | Web server and API: sign-in, invites, roles, calendar data (SQLite), live updates, weather and push notifications |
 | `web/` | The app people use in the browser |
 | `Dockerfile`, `docker-compose.yml` | Container setup |
