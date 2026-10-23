@@ -1,3 +1,5 @@
+# Node 24 LTS: this tag always points at the newest 24.x release, including security patches.
+# docker-compose builds with "pull: true", so every rebuild (docker compose up -d --build) picks them up.
 FROM node:24-alpine
 
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/data

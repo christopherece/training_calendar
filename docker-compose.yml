@@ -1,6 +1,9 @@
 services:
   training:
-    build: .
+    build:
+      context: .
+      # always fetch the newest Node 24 base image, so Node security patches arrive with every rebuild
+      pull: true
     container_name: dockside-training
     ports:
       - "8080:8080"

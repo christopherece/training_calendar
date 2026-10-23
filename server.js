@@ -934,7 +934,7 @@ const server = http.createServer((req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, () => console.log('Dockside Training' + (DEV ? ' (development)' : '') + ' on http://localhost:' + PORT + ' (data in ' + DATA_DIR + ')'));
+  server.listen(PORT, () => console.log('Dockside Training' + (DEV ? ' (development)' : '') + ' on http://localhost:' + PORT + ' (data in ' + DATA_DIR + ', Node ' + process.version + ')'));
   const stop = () => { server.close(); db.close(); process.exit(0); };
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);

@@ -114,7 +114,7 @@ The development copy runs next to the real calendar without touching it: it uses
 development. Changes to files in `web/` show after a browser refresh. Changes to `server.js` restart the server
 automatically.
 
-**With Node.js** (22.15 or newer), from the project folder:
+**With Node.js** (24.22.1 or newer, see *Keeping Node.js patched*), from the project folder:
 
 ```sh
 npm run dev
@@ -135,13 +135,26 @@ Docker Desktop may not notice changes to `server.js`; if so, run `docker compose
 
 ## Run without Docker
 
-You need Node.js 22.15 or newer. There are no packages to install.
+You need Node.js 24.22.1 or newer (on Node 22: 22.23.4 or newer). There are no packages to install.
 
 ```sh
 npm start
 ```
 
 The data is stored in `./data/training.db`. Set `PORT`, `DATA_DIR` or `PUBLIC_URL` to change the defaults.
+
+## Keeping Node.js patched
+
+The calendar runs on Node.js 24 (LTS). Node publishes security releases every few months; the newest as of
+October 2026 is **24.22.1** (20 Oct 2026). It fixes problems in the web server, secure connections and compression
+that this app relies on. Security releases are listed at https://nodejs.org/en/blog/vulnerability.
+
+- **Docker:** the image is built from `node:24-alpine`, which always points at the newest Node 24, and the compose
+  files fetch it fresh on every build. To pick up a new Node release, run `docker compose up -d --build`.
+- **Without Docker:** install the latest Node 24 LTS from https://nodejs.org (on Windows:
+  `winget upgrade OpenJS.NodeJS.LTS`), then restart the calendar.
+
+Either way, the server prints the Node version it runs on when it starts, e.g. `… (data in /data, Node v24.22.1)`.
 
 ## Files
 
