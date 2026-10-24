@@ -6,7 +6,7 @@ A staff training calendar for the marina, hosted on your own PC with Docker.
   to another day or time. They can also plan something for a month and set the day later, mark
   attendance, download attendance as a spreadsheet, and see attendance reports.
 - **Administrators** can do everything managers can, and are the only ones who see **Settings**: training types,
-  adding, inviting or removing people, changing their roles, and their own account and notifications.
+  adding, inviting or removing people, and changing their roles.
 - **Staff** sign in to see the calendar, book places, and see their own training history.
 - Everyone's screen updates as soon as something changes.
 
@@ -77,7 +77,7 @@ When running without Docker on Windows, `npm start` already trusts the certifica
 
 ## Phone notifications
 
-Anyone with an account can turn notifications on in **My training → Notifications** (administrators: **Settings → Notifications**), once on each phone or computer.
+Anyone with an account can turn notifications on with the **cog (⚙) at the top right → Notifications**, once on each phone or computer.
 They can choose which of these they get:
 
 - **A session they booked is moved or cancelled.** Several changes saved at once arrive as one notification.
@@ -95,7 +95,7 @@ out turns notifications off on that device, and removing someone from the team s
   - a tunnel such as Cloudflare Tunnel, which gives an address like `https://training.example.co.nz` that also works off site;
   - a name and certificate from IT, served through a reverse proxy such as Caddy.
 - **iPhone and iPad** (iOS 16.4 or newer): open the calendar in Safari, tap Share, then **Add to Home Screen**. Open it
-  from the new icon, sign in, and turn notifications on in My training. Safari itself cannot receive them.
+  from the new icon, sign in, and turn notifications on with the cog (⚙) at the top right. Safari itself cannot receive them.
 - **Android:** Chrome can turn them on straight from the browser. Adding it to the home screen is optional.
 
 Once it's on HTTPS, set `COOKIE_SECURE: "1"` and `PUBLIC_URL` to the https address in `docker-compose.yml`.

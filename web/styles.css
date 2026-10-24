@@ -77,6 +77,11 @@ h1 { margin: 0; flex: 1 1 auto; min-width: 0; font-family: var(--font-display); 
 .head-right { display: flex; align-items: center; gap: 10px; flex: none; }
 .theme-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; background: none; border: 1px solid var(--line); border-radius: var(--radius); color: var(--brand); font-weight: 600; font-size: 13px; cursor: pointer; }
 .theme-toggle:hover { border-color: var(--accent); }
+.account-btn { padding: 0 10px; }
+.account-btn[hidden] { display: none; }
+.account-btn[aria-current="page"] { background: var(--accent-soft); border-color: var(--accent); }
+/* narrow phones: no room for the role badge beside the cog; the account page says the role */
+@media (max-width: 440px) { .who .tag { display: none; } }
 .theme-toggle .tt-label::before { content: 'Dark mode'; }
 [data-theme="dark"] .theme-toggle .tt-label::before { content: 'Light mode'; }
 .theme-toggle .ic-sun, [data-theme="dark"] .theme-toggle .ic-moon { display: none; }

@@ -77,7 +77,7 @@ var fmtDMY = new Intl.DateTimeFormat('en-NZ', { day: 'numeric', month: 'short', 
 function monthName(key) { return fmtMonth.format(fromYmd(key + '-01')); }
 
 /* ---------- state ---------- */
-var VIEWS = ['month', 'week', 'agenda', 'mine', 'reports', 'settings'];
+var VIEWS = ['month', 'week', 'agenda', 'mine', 'reports', 'settings', 'account'];
 function savedView() {
   try { var v = localStorage.getItem('dockside-view'); return VIEWS.indexOf(v) >= 0 ? v : 'month'; } catch (e) { return 'month'; }
 }
@@ -101,6 +101,7 @@ var state = {
   link: null,       /* { token, kind: 'invite'|'reset', email, name } from an invite or reset link */
   events: null,
   view: savedView(),
+  prevView: null,   /* where the cog goes back to after the account page */
   drag: null,
   renderPending: false,
   month: { y: now0.getFullYear(), m: now0.getMonth() },
@@ -284,14 +285,14 @@ function render() {
     $('view').replaceChildren(authView());
   } else {
     index();
-    if (state.auth === 'public' && (state.view === 'mine' || state.view === 'settings')) state.view = 'month';
+    if (state.auth === 'public' && (state.view === 'mine' || state.view === 'settings' || state.view === 'account')) state.view = 'month';
     if (state.view === 'reports' && !isAdmin()) state.view = 'month';
     if (state.view === 'settings' && !canSettings()) state.view = state.auth === 'in' ? 'mine' : 'month';
     renderBar(); renderFilters();
     var v = state.view;
     var calendar = v === 'month' || v === 'week' || v === 'agenda';
     $('view').replaceChildren(calendar ? weatherStrip() || '' : '',
-      v === 'agenda' ? agendaView() : v === 'mine' ? mineView() : v === 'week' ? weekView() : v === 'settings' ? settingsView() : v === 'reports' ? reportsView() : monthView());
+      v === 'agenda' ? agendaView() : v === 'mine' ? mineView() : v === 'week' ? weekView() : v === 'settings' ? settingsView() : v === 'reports' ? reportsView() : v === 'account' ? accountView() : monthView());
   }
   Object.keys(typed).forEach(function (id) {
     var el = document.getElementById(id);
@@ -319,6 +320,9 @@ function renderWho() {
     kids.push(h('button', { class: 'btn', type: 'button', 'data-fk': 'signin', onclick: function () { state.auth = 'signedOut'; state.authNote = ''; render(); } }, 'Sign in'));
   }
   $('who').replaceChildren.apply($('who'), kids);
+  var cog = $('account-btn');
+  cog.hidden = state.auth !== 'in';
+  if (state.view === 'account') cog.setAttribute('aria-current', 'page'); else cog.removeAttribute('aria-current');
 }
 
 function viewTabs() {
@@ -373,7 +377,7 @@ function renderBar() {
 
 function renderFilters() {
   var box = $('filters');
-  box.hidden = state.view === 'mine' || state.view === 'settings';
+  box.hidden = state.view === 'mine' || state.view === 'settings' || state.view === 'account';
   /* the filter doubles as the colour key, like the legend in the training spreadsheet */
   var row = h('div', { class: 'filter-row' },
     h('button', {
@@ -1192,8 +1196,6 @@ function mineView() {
   if (needs.length) wrap.append(section('Required sessions to book', needs, ''));
   wrap.append(section('Your upcoming sessions', booked, 'You have nothing booked. Pick a session from the Month, Week or Agenda view.'));
   wrap.append(section('Your history', history, 'Sessions you have attended will be listed here.'));
-  /* managers and staff have no Settings tab, so their own account and notifications live here */
-  if (!canSettings()) wrap.append(myAccountSection(), notifySection());
   root.append(wrap);
   return root;
 }
@@ -1480,6 +1482,7 @@ document.addEventListener('visibilitychange', function () {
   load();
   if (!state.weatherAt || Date.now() - state.weatherAt > 10 * 60e3) loadWeather();
 });
+$('account-btn').addEventListener('click', toggleAccount);
 window.addEventListener('online', function () { if (state.auth === 'in' || state.auth === 'public') { load(); loadWeather(); } });
 window.addEventListener('offline', function () { state.offline = true; scheduleRender(); });
 
@@ -1494,7 +1497,7 @@ function notifySection() {
       h('ol', { class: 'steps' },
         h('li', null, 'Tap the Share button in Safari.'),
         h('li', null, 'Choose “Add to Home Screen”.'),
-        h('li', null, 'Open the calendar from the new icon, sign in, and come back to My training.')));
+        h('li', null, 'Open the calendar from the new icon, sign in, and tap the cog (⚙) at the top right.')));
   } else if (p.reason === 'unsupported') {
     box.append(h('p', null, 'This browser cannot receive notifications. Try Chrome, Edge, Firefox or Safari.'));
   } else if (p.permission === 'denied') {
@@ -1530,10 +1533,23 @@ function notifySection() {
     h('p', { class: 'hint-line' }, 'These choices apply to every device you turn notifications on for.'));
 }
 
-/* ---------- settings (administrators only): training types, people, invites, roles, and their own account ---------- */
+/* ---------- your own account and notifications, behind the cog in the header (everyone signed in) ---------- */
+function accountView() {
+  var root = h('div', { class: 'people' });
+  root.append(myAccountSection(), notifySection());
+  return root;
+}
+/* the cog opens the account page; pressed again, it goes back to where you were */
+function toggleAccount() {
+  if (state.view === 'account') setView(state.prevView || 'month');
+  else { state.prevView = state.view; setView('account'); }
+  window.scrollTo(0, 0);
+}
+
+/* ---------- settings (administrators only): training types, people, invites and roles ---------- */
 function settingsView() {
   var root = h('div', { class: 'people' });
-  root.append(typesSection(), teamSection(), addPersonSection(), inviteSection(), myAccountSection(), notifySection());
+  root.append(typesSection(), teamSection(), addPersonSection(), inviteSection());
   return root;
 }
 
@@ -1685,7 +1701,7 @@ function addPersonSection() {
   var err = h('p', { class: 'form-error', role: 'alert' });
   var form = h('form', { class: 'invite-form', novalidate: true },
     fld('np-name', 'Name', name), fld('np-email', 'Email', email), fld('np-role', 'Role', role),
-    fld('np-pass', 'Starting password', pass, 'At least 8 characters. They can change it in My training.'),
+    fld('np-pass', 'Starting password', pass, 'At least 8 characters. They can change it with the cog (⚙) at the top right.'),
     h('button', { class: 'btn primary', type: 'submit' }, 'Add'));
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
