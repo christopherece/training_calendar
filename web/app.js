@@ -112,6 +112,8 @@ var state = {
   confirmRemove: null,
   showPast: false,
   reportYear: null, /* financial year on the Reports tab, '' for all years; null until first shown */
+  /* the Reports session list's own filters; year starts on this calendar year (null until first shown) */
+  reportList: { year: null, month: '', kind: '', show: 'all', q: '' },
   sessions: [],   /* sessions with a day */
   plans: [],      /* sessions planned for a month, day not set yet */
   signups: [],
@@ -1250,6 +1252,9 @@ function reportsView() {
   });
 
   var marked = total.attended + total.absent;
+  var upcoming = state.sessions.filter(function (s) {
+    return inFilter(s) && !isOff(s) && startMs(s) > nowT && (!year || finYear(s.date) === year);
+  });
   var head = h('div', { class: 'rp-head' },
     h('h2', { class: 'sec-h' }, 'Attendance report'),
     h('label', { class: 'rp-year' }, h('span', null, 'Financial year'),
@@ -1259,16 +1264,19 @@ function reportsView() {
   var wrap = h('div', { class: 'mine reports' }, head,
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', null, String(held.length)), h('span', null, 'Sessions held')),
-      h('div', { class: 'stat' }, h('b', null, String(marked + total.going)), h('span', null, 'Places booked')),
-      h('div', { class: 'stat' }, h('b', null, pct(total.attended, marked)), h('span', null, 'Attendance rate (of those marked)')),
+      h('div', { class: 'stat' }, h('b', null, String(upcoming.length)), h('span', null, 'Sessions coming up')),
+      h('div', { class: 'stat' }, h('b', null, String(marked + total.going)), h('span', null, 'Places booked (held)')),
+      h('div', { class: 'stat' }, h('b', null, String(total.attended)), h('span', null, 'Completed (attended)')),
+      h('div', { class: 'stat' }, h('b', null, pct(total.attended, marked)), h('span', null, 'Completion rate (of those marked)')),
       h('div', { class: 'stat' }, h('b', null, String(total.absent)), h('span', null, 'Absences')),
       h('div', { class: 'stat' + (total.going ? ' rp-todo' : '') }, h('b', null, String(total.going)), h('span', null, 'Not marked yet'))));
   if (!held.length) {
-    wrap.append(h('p', { class: 'muted' }, 'No sessions have been held' + (year ? ' in ' + year : '') + (state.filter.size ? ' for these types' : '') + ' yet.'));
+    wrap.append(h('p', { class: 'muted' }, 'No sessions have been held' + (year ? ' in ' + year : '') + (state.filter.size ? ' for these types' : '') + ' yet.'),
+      sessionTable(nowT));
     root.append(wrap);
     return root;
   }
-  wrap.append(monthChart(byMonth, year), typeChart(byType), personTable(people, byPerson));
+  wrap.append(sessionTable(nowT), monthChart(byMonth, year), typeChart(byType), personTable(people, byPerson));
   root.append(wrap);
   return root;
 }
@@ -1344,6 +1352,96 @@ function typeChart(byType) {
         h('span', { class: 'rp-track' }, m ? h('span', { class: 'rp-fill', style: { width: rate * 100 + '%' } }) : null),
         h('span', { class: 'rp-val' }, pct(r.attended, m), h('small', null, ' ' + r.attended + '/' + m)));
     }))));
+}
+
+/* every training and drill, with its own filters (year, month, training or drill, availability, search):
+   booked, places left, completed, absent and not marked, one row each */
+var RP_SHOW = [['all', 'All'], ['open', 'Open for booking'], ['upcoming', 'Coming up'], ['held', 'Held']];
+var RP_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function sessionTable(nowT) {
+  var f = state.reportList, all = state.sessions.concat(state.plans);
+  function dayKey(s) { return s.date || s.month + '-01'; }
+  var years = Array.from(new Set(all.map(function (s) { return dayKey(s).slice(0, 4); }))).sort().reverse();
+  /* starts on this calendar year, once the data is in */
+  if (f.year == null && years.length) f.year = years.indexOf(todayYmd().slice(0, 4)) >= 0 ? todayYmd().slice(0, 4) : '';
+  if (f.year && years.indexOf(f.year) < 0) f.year = '';
+  var words = f.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+  var list = all.filter(function (s) {
+    var key = dayKey(s), t = catOf(s.category);
+    if (!inFilter(s) || (f.year && key.slice(0, 4) !== f.year) || (f.month && key.slice(5, 7) !== f.month)) return false;
+    if (f.kind && s.kind !== f.kind) return false;
+    if (words.length) {
+      var hay = [s.title, t.name, s.trainer, t.supplier, s.location].join(' ').toLowerCase();
+      if (!words.every(function (w) { return hay.indexOf(w) >= 0; })) return false;
+    }
+    var started = !s.unscheduled && startMs(s) <= nowT;
+    if (f.show === 'held') return started && !isOff(s);
+    if (f.show === 'upcoming') return !started && !isOff(s);
+    if (f.show === 'open') return !started && !isOff(s) && !s.unscheduled && (!s.capacity || signupsOf(s).length < s.capacity);
+    return true;
+  }).sort(function (a, b) { return dayKey(a).localeCompare(dayKey(b)) || (a.start || '').localeCompare(b.start || '') || a.title.localeCompare(b.title); });
+
+  var sum = { booked: 0, attended: 0, absent: 0, going: 0 };
+  var rows = list.map(function (s) {
+    var su = signupsOf(s), t = catOf(s.category), started = !s.unscheduled && startMs(s) <= nowT;
+    var c = tally();
+    su.forEach(function (x) { c[x.status]++; });
+    if (!isOff(s)) { sum.booked += su.length; sum.attended += c.attended; sum.absent += c.absent; sum.going += started ? c.going : 0; }
+    var m = c.attended + c.absent;
+    var dash = function (n) { return started ? String(n) : '–'; };
+    var left = started || isOff(s) ? '–' : s.unscheduled ? 'Day not set' : !s.capacity ? 'No limit' : Math.max(0, s.capacity - su.length) ? String(Math.max(0, s.capacity - su.length)) : 'Full';
+    return h('tr', { class: isOff(s) ? 'rp-off' : null },
+      h('td', { 'data-l': 'Date' }, s.unscheduled ? 'Day to be set, ' + monthName(s.month) : dateRange(s) + ' ' + s.date.slice(0, 4)),
+      h('td', { class: 'rp-title' },
+        h('button', { class: 'linkish', type: 'button', 'data-fk': 'rs-' + s.id, onclick: function () { openDetails(s); } }, s.title),
+        h('span', { class: 'rp-type' }, h('span', { class: 'sw', 'aria-hidden': 'true', style: { '--cat': t.color } }),
+          (s.kind === 'drill' ? 'Drill · ' : 'Training · ') + t.name + (s.mandatory ? ' · Required' : ''))),
+      h('td', { 'data-l': 'Status' }, isOff(s) ? labelOf(SESSION_STATUS, s.status) : started ? (endMs(s) < nowT ? 'Held' : 'On now') : labelOf(SESSION_STATUS, s.status)),
+      h('td', { 'data-l': 'Booked' }, su.length + (s.capacity ? ' / ' + s.capacity : '')),
+      h('td', { 'data-l': 'Places left', class: left === 'Full' ? 'rp-warn' : null }, left),
+      h('td', { 'data-l': 'Completed' }, dash(c.attended)),
+      h('td', { 'data-l': 'Absent' }, dash(c.absent)),
+      h('td', { 'data-l': 'Not marked yet', class: started && c.going ? 'rp-warn' : null }, dash(c.going)),
+      h('td', { 'data-l': 'Rate' }, started ? pct(c.attended, m) : '–'));
+  });
+
+  function pick(label, key, options) {
+    return h('label', { class: 'rp-year' }, h('span', null, label),
+      h('select', { 'data-fk': 'rl-' + key, onchange: function (e) { f[key] = e.target.value; render(); } },
+        options.map(function (o) { return h('option', { value: o[0], selected: o[0] === f[key] }, o[1]); })));
+  }
+  var changed = f.year !== (years.indexOf(todayYmd().slice(0, 4)) >= 0 ? todayYmd().slice(0, 4) : '') || f.month || f.kind || f.q || f.show !== 'all';
+  var filters = h('div', { class: 'rp-filters' },
+    pick('Year', 'year', [['', 'All years']].concat(years.map(function (y) { return [y, y]; }))),
+    pick('Month', 'month', [['', 'All months']].concat(RP_MONTHS.map(function (n, i) { return [pad(i + 1), n]; }))),
+    pick('Training or drill', 'kind', [['', 'Both'], ['training', 'Training only'], ['drill', 'Drills only']]),
+    h('label', { class: 'rp-year rp-search' }, h('span', null, 'Search'),
+      h('input', { id: 'rl-q', type: 'search', value: f.q, placeholder: 'Title, type, trainer or place', autocomplete: 'off',
+        oninput: function (e) { f.q = e.target.value; render(); } })),
+    changed ? h('button', { class: 'btn quiet small', type: 'button', 'data-fk': 'rl-clear', onclick: function () {
+      state.reportList = { year: null, month: '', kind: '', show: 'all', q: '' }; render();
+    } }, 'Clear filters') : null);
+  var show = h('div', { class: 'rp-show', role: 'group', 'aria-label': 'Show sessions' }, RP_SHOW.map(function (o) {
+    return h('button', { class: 'fchip', type: 'button', 'aria-pressed': String(f.show === o[0]), 'data-fk': 'rp-show-' + o[0],
+      onclick: function () { f.show = o[0]; render(); } }, o[1]);
+  }));
+  var counted = list.filter(function (s) { return !isOff(s); }).length;
+  return h('section', { class: 'rp-card' },
+    h('h2', { class: 'sec-h' }, 'Training and drills · ' + list.length + (list.length === 1 ? ' session' : ' sessions')),
+    h('p', { class: 'muted rp-sub' }, 'These filters set this list only. Open a session to see who booked and to mark attendance. Cancelled and postponed sessions are greyed and left out of the totals.'),
+    filters, show,
+    list.length ? h('div', { class: 'rp-scroll' }, h('table', { class: 'ptable rp-people rp-sessions' },
+      h('thead', null, h('tr', null, ['Date', 'Training or drill', 'Status', 'Booked', 'Places left', 'Completed', 'Absent', 'Not marked yet', 'Rate'].map(function (c) { return h('th', null, c); }))),
+      h('tbody', null, rows),
+      h('tfoot', null, h('tr', null,
+        h('td', null, 'Total'), h('td', null, counted + (counted === 1 ? ' session' : ' sessions')), h('td', null, ''),
+        h('td', { 'data-l': 'Booked' }, String(sum.booked)), h('td', null, ''),
+        h('td', { 'data-l': 'Completed' }, String(sum.attended)),
+        h('td', { 'data-l': 'Absent' }, String(sum.absent)),
+        h('td', { 'data-l': 'Not marked yet' }, String(sum.going)),
+        h('td', { 'data-l': 'Rate' }, pct(sum.attended, sum.attended + sum.absent))))))
+      : h('p', { class: 'muted' }, 'Nothing matches these filters.'));
 }
 
 function personTable(people, byPerson) {
