@@ -5,12 +5,12 @@ A staff training calendar for the marina, hosted on your own PC with Docker.
 - **Managers** add training sessions and drills, edit them, and change their dates by dragging them
   to another day or time. They can also plan something for a month and set the day later, mark
   attendance, download attendance as a spreadsheet, and see attendance reports.
-- **Admins** can do everything managers can, and are the only ones who see **Settings**: training types, and adding,
-  inviting or removing people and changing their roles.
+- **Administrators** can do everything managers can, and are the only ones who see **Settings**: training types,
+  adding, inviting or removing people, changing their roles, and their own account and notifications.
 - **Staff** sign in to see the calendar, book places, and see their own training history.
 - Everyone's screen updates as soon as something changes.
 
-The server checks every change, so only managers and admins can change the calendar, and only admins can change Settings, even if someone tampers
+The server checks every change, so only managers and administrators can change the calendar, and only administrators can change Settings, even if someone tampers
 with the page.
 
 ## Run it
@@ -23,8 +23,9 @@ docker compose up -d --build
 
 Then open http://localhost:8080 on that PC.
 
-1. **First visit:** create the first admin account. This option only appears while the calendar has no accounts.
-   On a calendar made before admins existed, the person who first set it up becomes the admin automatically.
+1. **First visit:** create the first account; it is the **administrator**. This option only appears while the calendar has no accounts.
+   There is always an administrator: if a calendar has none (for example one made before the role existed), the
+   longest-standing manager, or failing that the longest-standing account, becomes the administrator when the calendar starts.
 2. **Invite people:** go to **Settings** and enter someone's email. You get a sign-up link to send them by text, Teams or email.
    The link works once, for 14 days. They open it, enter their name and choose a password.
 3. **Forgotten passwords:** go to **Settings**, click **Password reset link** next to the person, and send them the link.
@@ -76,7 +77,7 @@ When running without Docker on Windows, `npm start` already trusts the certifica
 
 ## Phone notifications
 
-Anyone with an account can turn notifications on in **My training → Notifications**, once on each phone or computer.
+Anyone with an account can turn notifications on in **My training → Notifications** (administrators: **Settings → Notifications**), once on each phone or computer.
 They can choose which of these they get:
 
 - **A session they booked is moved or cancelled.** Several changes saved at once arrive as one notification.
@@ -113,7 +114,7 @@ can contact about your server (default: `https://www.westhaven.co.nz`).
 ## Development
 
 The development copy runs next to the real calendar without touching it: it uses **port 8081** and its own data
-(`data-dev/`, or the `training-dev-data` Docker volume). The first visit asks you to create an admin account, just for
+(`data-dev/`, or the `training-dev-data` Docker volume). The first visit asks you to create an administrator account, just for
 development. Changes to files in `web/` show after a browser refresh. Changes to `server.js` restart the server
 automatically.
 

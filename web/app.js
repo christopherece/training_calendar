@@ -1,5 +1,5 @@
 /* Dockside Training: staff training calendar, talking to server.js.
-   Managers plan, edit and reschedule; admins also run Settings; staff book places. The server decides who may change what. */
+   Managers plan, edit and reschedule; administrators also run Settings; staff book places. The server decides who may change what. */
 
 /* training and drill types come from the server (Settings → Training types), each with its spreadsheet colour */
 var TYPES = [], TYPE = {};
@@ -24,14 +24,14 @@ var RE_MONTH = /^\d{4}-\d{2}$/;
 var RE_TIME = /^\d{2}:\d{2}$/;
 var RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 var STATUSES = ['going', 'attended', 'absent'];
-var ROLES = [['admin', 'Admin'], ['manager', 'Manager'], ['staff', 'Staff']];
+var ROLES = [['admin', 'Administrator'], ['manager', 'Manager'], ['staff', 'Staff']];
 var ROLE_ABOUT = {
-  admin: 'Admin: can change Settings (training types and the team), and add, edit and move training.',
+  admin: 'Administrator: can change Settings (training types, people, invites and roles), add, edit and move training, and see reports.',
   manager: 'Manager: can add, edit and move training, and see reports.',
   staff: 'Staff: can view the calendar and book places.'
 };
 function roleSelect(props, value) { return h('select', props, ROLES.map(function (r) { return h('option', { value: r[0], selected: r[0] === value }, r[1]); })); }
-function roleWord(role) { return role === 'admin' ? 'an admin' : role === 'manager' ? 'a manager' : 'staff'; }
+function roleWord(role) { return role === 'admin' ? 'an administrator' :role === 'manager' ? 'a manager' : 'staff'; }
 
 /* choices from the marina's training spreadsheet */
 var DURATIONS = ['1 hour', '2 hours', '3 hours', '1/2 Day', '1 Day', '2 Days', '3 Days', '4 Days', '5 Days', '1 Week', '2 Weeks'];
@@ -169,7 +169,12 @@ async function api(method, url, body) {
 /* the calendar was updated while this page was open: load the new code, waiting for any open window to close first */
 var pageBuild = null, reloadPending = false;
 function checkBuild(build) {
-  if (!pageBuild) { pageBuild = build; return; }
+  if (!pageBuild) {
+    pageBuild = build;
+    /* shown in the footer, so anyone can tell which version they are looking at */
+    document.querySelector('.site-foot-in').append(h('span', { class: 'build' }, 'Version ' + build.slice(0, 7)));
+    return;
+  }
   if (build === pageBuild || reloadPending) return;
   reloadPending = true;
   if (!$('modal-root').firstChild) location.reload();
@@ -1187,8 +1192,8 @@ function mineView() {
   if (needs.length) wrap.append(section('Required sessions to book', needs, ''));
   wrap.append(section('Your upcoming sessions', booked, 'You have nothing booked. Pick a session from the Month, Week or Agenda view.'));
   wrap.append(section('Your history', history, 'Sessions you have attended will be listed here.'));
-  /* your own account and notifications live here, since Settings is for admins only */
-  wrap.append(myAccountSection(), notifySection());
+  /* managers and staff have no Settings tab, so their own account and notifications live here */
+  if (!canSettings()) wrap.append(myAccountSection(), notifySection());
   root.append(wrap);
   return root;
 }
@@ -1525,10 +1530,10 @@ function notifySection() {
     h('p', { class: 'hint-line' }, 'These choices apply to every device you turn notifications on for.'));
 }
 
-/* ---------- settings (admins only): training types and the team ---------- */
+/* ---------- settings (administrators only): training types, people, invites, roles, and their own account ---------- */
 function settingsView() {
   var root = h('div', { class: 'people' });
-  root.append(typesSection(), teamSection(), addPersonSection(), inviteSection());
+  root.append(typesSection(), teamSection(), addPersonSection(), inviteSection(), myAccountSection(), notifySection());
   return root;
 }
 
@@ -1664,11 +1669,11 @@ function teamSection() {
   });
   table.append(body);
   return h('section', null,
-    h('h2', { class: 'sec-h' }, 'Team · ' + count('admin', 'admin', 'admins') + ', ' + count('manager', 'manager', 'managers') + ', ' + count('staff', 'staff', 'staff')),
+    h('h2', { class: 'sec-h' }, 'People and roles · ' + count('admin', 'administrator', 'administrators') + ', ' + count('manager', 'manager', 'managers') + ', ' + count('staff', 'staff', 'staff')),
     h('p', { class: 'hint-line', style: { marginBottom: '10px' } },
-      'Admins can change these settings, as well as everything managers can do. Managers can add, edit and move training and see reports. Staff can book places. ' +
+      'Administrators can change these settings, as well as everything managers can do. Managers can add, edit and move training and see reports. Staff can book places. ' +
       (state.publicRead ? 'Anyone with the address can view the calendar without an account. ' : '') +
-      'You cannot change your own role, so there is always at least one admin.'),
+      'You cannot change your own role, so there is always at least one administrator.'),
     table);
 }
 
@@ -2375,7 +2380,7 @@ function authView() {
   var email = h('input', { id: 'a-email', type: 'email', autocomplete: 'email' });
   var pass = h('input', { id: 'a-pass', type: 'password', autocomplete: setup || link ? 'new-password' : 'current-password' });
   var go = h('button', { class: 'btn primary', type: 'submit' },
-    setup ? 'Create admin account' : joining ? 'Join the calendar' : resetting ? 'Save new password' : 'Sign in');
+    setup ? 'Create administrator account' : joining ? 'Join the calendar' : resetting ? 'Save new password' : 'Sign in');
   var form = h('form', { novalidate: true },
     (setup || joining) && fld('a-name', 'Your name', name),
     !link && fld('a-email', 'Email', email),
@@ -2399,7 +2404,7 @@ function authView() {
 
   if (setup) {
     box.append(h('h2', null, 'Set up the calendar'),
-      h('p', { class: 'muted' }, 'Create the first admin account. You can invite the rest of the team afterwards.'));
+      h('p', { class: 'muted' }, 'Create the first account. It will be the administrator, who can change Settings. You can invite the rest of the team afterwards.'));
   } else if (joining) {
     box.append(h('h2', null, 'Join Dockside Training'),
       h('p', { class: 'muted' }, 'You were invited as ' + link.email + '. Enter your name and choose a password.'));

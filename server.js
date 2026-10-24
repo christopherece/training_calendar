@@ -55,13 +55,15 @@ db.exec(`
 if (!db.prepare("SELECT 1 FROM pragma_table_info('users') WHERE name = 'notify'").get()) {
   db.exec("ALTER TABLE users ADD COLUMN notify TEXT NOT NULL DEFAULT '{}'");
 }
-/* added after the first release: the admin role. Once, the person who set the calendar up (its first manager) becomes admin */
-if (!db.prepare("SELECT 1 FROM settings WHERE key = 'admin_v1'").get()) {
-  if (!db.prepare("SELECT 1 FROM users WHERE role = 'admin' AND active = 1").get()) {
-    const first = db.prepare("SELECT id FROM users WHERE role = 'manager' AND active = 1 ORDER BY created LIMIT 1").get();
-    if (first) db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(first.id);
+/* there is always an administrator: if none is left, the longest-standing manager (or, with no managers, the
+   longest-standing account) becomes one, so Settings can never be locked away. This also upgrades calendars made
+   before the administrator role existed. */
+if (!db.prepare("SELECT 1 FROM users WHERE role = 'admin' AND active = 1").get()) {
+  const first = db.prepare("SELECT id, email FROM users WHERE active = 1 ORDER BY role = 'manager' DESC, created LIMIT 1").get();
+  if (first) {
+    db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(first.id);
+    console.log('No administrator was set, so ' + first.email + ' is now the administrator.');
   }
-  db.prepare("INSERT INTO settings (key, value) VALUES ('admin_v1', '1')").run();
 }
 const q = sql => db.prepare(sql);
 function tx(fn) {
@@ -904,7 +906,7 @@ route('DELETE', '/api/invites/:id', 'admin', (req, res, body, p) => {
 });
 
 route('PATCH', '/api/users/:id', 'admin', (req, res, body, p, me) => {
-  if (p.id === me.id) fail(400, 'You cannot change your own role. Ask another admin.');
+  if (p.id === me.id) fail(400, 'You cannot change your own role. Ask another administrator.');
   if (!ROLES.includes(body.role)) fail(400, 'Bad role.');
   q('UPDATE users SET role = ? WHERE id = ? AND active = 1').run(body.role, p.id);
   changed();
@@ -983,7 +985,7 @@ async function handleApi(req, res, url) {
       const me = r.auth === 'none' ? null : currentUser(req);
       if (r.auth !== 'none' && !me) fail(401, 'Please sign in again.');
       if (r.auth === 'manager' && me.role !== 'manager' && me.role !== 'admin') fail(403, 'Only managers can change the calendar.');
-      if (r.auth === 'admin' && me.role !== 'admin') fail(403, 'Only admins can change settings.');
+      if (r.auth === 'admin' && me.role !== 'admin') fail(403, 'Only administrators can change settings.');
       const body = req.method === 'GET' ? {} : await readBody(req);
       const out = await r.fn(req, res, body, params, me);
       if (out !== undefined) sendJson(res, 200, out);
@@ -1003,6 +1005,8 @@ function serveStatic(req, res, url) {
   if (!file.startsWith(WEB_DIR + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, buf) => {
     if (err) { res.writeHead(404, SECURITY_HEADERS); return res.end('Not found'); }
+    /* the page asks for its code by version, so no browser or proxy can hand back a copy from before an update */
+    if (rel === '/index.html') buf = Buffer.from(buf.toString('utf8').replace(/(src|href)="(app\.js|styles\.css|theme\.js)"/g, '$1="$2?v=' + BUILD + '"'));
     res.writeHead(200, Object.assign({ 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }, SECURITY_HEADERS));
     res.end(req.method === 'HEAD' ? undefined : buf);
   });
