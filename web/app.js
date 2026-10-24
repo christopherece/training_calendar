@@ -161,9 +161,18 @@ async function api(method, url, body) {
   }
   var data = null;
   try { data = await res.json(); } catch (e) { /* empty or not JSON */ }
+  if (data && data.build && res.headers.get('X-Offline') !== '1') checkBuild(data.build);
   if (res.status === 401 && state.auth === 'in') signedOutBy('Your sign-in has ended. Sign in again.');
   if (!res.ok) { var err = new Error((data && data.error) || 'Something went wrong. Try again.'); err.status = res.status; throw err; }
   return data || {};
+}
+/* the calendar was updated while this page was open: load the new code, waiting for any open window to close first */
+var pageBuild = null, reloadPending = false;
+function checkBuild(build) {
+  if (!pageBuild) { pageBuild = build; return; }
+  if (build === pageBuild || reloadPending) return;
+  reloadPending = true;
+  if (!$('modal-root').firstChild) location.reload();
 }
 function newId() { return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()).replace(/[^a-z0-9]/gi, '').slice(0, 24); }
 /* several calendar changes that must land together: [{op: 'set'|'update'|'delete', path: 'sessions/ID', data}] */
@@ -2015,6 +2024,7 @@ function closeModal() {
   state.detailId = null;
   $('modal-root').replaceChildren();
   if (escHandler) { document.removeEventListener('keydown', escHandler); escHandler = null; }
+  if (reloadPending) { location.reload(); return; }
   var f = state.lastFocus;
   if (f && document.contains(f)) f.focus();
   else { var a = document.querySelector('[data-fk="add"]'); if (a) a.focus(); }

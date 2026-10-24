@@ -17,6 +17,12 @@ const SECURE_COOKIE = process.env.COOKIE_SECURE === '1';
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
 /* anyone who can reach the calendar may view it (never change it) without signing in; PUBLIC_READ=0 turns this off */
 const PUBLIC_READ = process.env.PUBLIC_READ !== '0';
+/* a fingerprint of the web app's files: pages left open across an update see it change and reload the new code */
+const BUILD = (function () {
+  const h = crypto.createHash('sha256');
+  for (const f of fs.readdirSync(WEB_DIR).sort()) h.update(f).update(fs.readFileSync(path.join(WEB_DIR, f)));
+  return h.digest('hex').slice(0, 12);
+})();
 const LOGIN_DAYS = 30, INVITE_DAYS = 14, RESET_DAYS = 3, DAY = 864e5;
 
 /* ---------- database ---------- */
@@ -292,7 +298,7 @@ const route = (method, pattern, auth, fn) => routes.push({ method, pattern, auth
 
 route('GET', '/api/status', 'none', req => {
   const me = currentUser(req);
-  return { setup: q('SELECT COUNT(*) n FROM users').get().n === 0, publicRead: PUBLIC_READ, me: me && publicUser(me) };
+  return { build: BUILD, setup: q('SELECT COUNT(*) n FROM users').get().n === 0, publicRead: PUBLIC_READ, me: me && publicUser(me) };
 });
 
 /* the read-only calendar for visitors who are not signed in: sessions and how many places are taken, no names */
@@ -301,6 +307,7 @@ route('GET', '/api/public', 'none', () => {
   const counts = {};
   q('SELECT session_id s, COUNT(*) n FROM signups GROUP BY session_id').all().forEach(r => { counts[r.s] = r.n; });
   return {
+    build: BUILD,
     version,
     types: allTypes(),
     sessions: q('SELECT id, data FROM sessions').all().map(r => Object.assign({ id: r.id }, JSON.parse(r.data))),
@@ -379,6 +386,7 @@ route('GET', '/api/data', 'member', (req, res, body, p, me) => {
   const manager = me.role === 'manager' || me.role === 'admin';
   return {
     me: Object.assign(publicUser(me), { notify: prefsOf(q('SELECT notify FROM users WHERE id = ?').get(me.id).notify) }),
+    build: BUILD,
     version,
     types: allTypes(),
     sessions: q('SELECT id, data FROM sessions').all().map(r => Object.assign({ id: r.id }, JSON.parse(r.data))),
