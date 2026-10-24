@@ -49,6 +49,14 @@ db.exec(`
 if (!db.prepare("SELECT 1 FROM pragma_table_info('users') WHERE name = 'notify'").get()) {
   db.exec("ALTER TABLE users ADD COLUMN notify TEXT NOT NULL DEFAULT '{}'");
 }
+/* added after the first release: the admin role. Once, the person who set the calendar up (its first manager) becomes admin */
+if (!db.prepare("SELECT 1 FROM settings WHERE key = 'admin_v1'").get()) {
+  if (!db.prepare("SELECT 1 FROM users WHERE role = 'admin' AND active = 1").get()) {
+    const first = db.prepare("SELECT id FROM users WHERE role = 'manager' AND active = 1 ORDER BY created LIMIT 1").get();
+    if (first) db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(first.id);
+  }
+  db.prepare("INSERT INTO settings (key, value) VALUES ('admin_v1', '1')").run();
+}
 const q = sql => db.prepare(sql);
 function tx(fn) {
   db.exec('BEGIN');
@@ -65,6 +73,8 @@ const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RE_DATE = /^\d{4}-\d{2}-\d{2}$/, RE_MONTH = /^\d{4}-\d{2}$/, RE_TIME = /^\d{2}:\d{2}$/;
 const RE_MOVED = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const STATUSES = ['going', 'attended', 'absent'];
+/* admin: everything, including Settings (types and the team) · manager: the calendar and reports · staff: book places */
+const ROLES = ['admin', 'manager', 'staff'];
 const RE_COLOR = /^#[0-9A-F]{6}$/i;
 
 /* choices from the marina's training spreadsheet */
@@ -303,10 +313,10 @@ route('POST', '/api/setup', 'none', (req, res, body) => {
   const id = newId();
   tx(() => {
     if (q('SELECT COUNT(*) n FROM users').get().n !== 0) fail(409, 'The calendar is already set up. Sign in instead.');
-    q('INSERT INTO users (id, name, email, role, pass, created) VALUES (?, ?, ?, ?, ?, ?)').run(id, name, email, 'manager', hashPassword(pass), now());
+    q('INSERT INTO users (id, name, email, role, pass, created) VALUES (?, ?, ?, ?, ?, ?)').run(id, name, email, 'admin', hashPassword(pass), now());
   });
   startLogin(res, id);
-  return { me: { id, name, email, role: 'manager' } };
+  return { me: { id, name, email, role: 'admin' } };
 });
 
 route('POST', '/api/login', 'none', (req, res, body) => {
@@ -366,7 +376,7 @@ route('POST', '/api/link/:token', 'none', (req, res, body, p) => {
 });
 
 route('GET', '/api/data', 'member', (req, res, body, p, me) => {
-  const manager = me.role === 'manager';
+  const manager = me.role === 'manager' || me.role === 'admin';
   return {
     me: Object.assign(publicUser(me), { notify: prefsOf(q('SELECT notify FROM users WHERE id = ?').get(me.id).notify) }),
     version,
@@ -376,7 +386,7 @@ route('GET', '/api/data', 'member', (req, res, body, p, me) => {
     users: q('SELECT id, name, email, role, active FROM users').all().map(u => ({
       id: u.id, name: u.name, role: u.role, active: !!u.active, email: manager || u.id === me.id ? u.email : ''
     })),
-    invites: manager ? q("SELECT id, email, role, expires FROM links WHERE kind = 'invite' AND expires > ? ORDER BY email").all(now()) : []
+    invites: me.role === 'admin' ? q("SELECT id, email, role, expires FROM links WHERE kind = 'invite' AND expires > ? ORDER BY email").all(now()) : []
   };
 });
 
@@ -464,7 +474,7 @@ route('POST', '/api/signups', 'member', (req, res, body, p, me) => {
 route('DELETE', '/api/signups/:id', 'member', (req, res, body, p, me) => {
   const su = q('SELECT user_id, session_id FROM signups WHERE id = ?').get(p.id);
   if (!su) return {};
-  if (su.user_id !== me.id && me.role !== 'manager') fail(403, 'You can only remove your own booking.');
+  if (su.user_id !== me.id && me.role !== 'manager' && me.role !== 'admin') fail(403, 'You can only remove your own booking.');
   q('DELETE FROM signups WHERE id = ?').run(p.id);
   changed();
   const row = q('SELECT data FROM sessions WHERE id = ?').get(su.session_id);
@@ -738,7 +748,7 @@ function tellManagers(who, sid, s, what) {
   const taken = q('SELECT COUNT(*) n FROM signups WHERE session_id = ?').get(sid).n;
   const places = s.capacity > 0 ? taken + ' of ' + s.capacity + ' places taken' : taken + ' booked';
   const msg = { title: who.name + (what === 'booked' ? ' booked ' : ' withdrew from ') + s.title, body: pushWhen(s) + ' · ' + places + '.', url: dayUrl(s), tag: 'bookings-' + sid };
-  q("SELECT id FROM users WHERE active = 1 AND role = 'manager' AND id != ?").all(who.id).forEach(u => notifyUser(u.id, msg, 'bookings'));
+  q("SELECT id FROM users WHERE active = 1 AND role IN ('manager', 'admin') AND id != ?").all(who.id).forEach(u => notifyUser(u.id, msg, 'bookings'));
 }
 
 /* a manager's Send reminder: to people booked, to those who have not booked yet, or to everyone */
@@ -815,7 +825,7 @@ route('POST', '/api/me/password', 'member', (req, res, body, p, me) => {
   return {};
 });
 
-/* managers: training and drill types */
+/* admins: training and drill types */
 function cleanType(body) {
   const name = str(body.name, 80);
   if (!name) fail(400, 'Give the type a name.');
@@ -823,7 +833,7 @@ function cleanType(body) {
   const expiry = parseInt(body.expiry, 10) || 0;
   return { name, color: body.color.toUpperCase(), drill: body.drill === true ? 1 : 0, expiry: EXPIRY_MONTHS.includes(expiry) ? expiry : 0, supplier: str(body.supplier, 120) };
 }
-route('POST', '/api/types', 'manager', (req, res, body) => {
+route('POST', '/api/types', 'admin', (req, res, body) => {
   const t = cleanType(body);
   const base = t.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'type';
   let id = base, n = 2;
@@ -832,7 +842,7 @@ route('POST', '/api/types', 'manager', (req, res, body) => {
   changed();
   return { id };
 });
-route('PATCH', '/api/types/:id', 'manager', (req, res, body, p) => {
+route('PATCH', '/api/types/:id', 'admin', (req, res, body, p) => {
   const t = cleanType(body);
   if (!q('SELECT 1 FROM types WHERE id = ?').get(p.id)) fail(404, 'That type no longer exists.');
   tx(() => {
@@ -846,7 +856,7 @@ route('PATCH', '/api/types/:id', 'manager', (req, res, body, p) => {
   changed();
   return {};
 });
-route('DELETE', '/api/types/:id', 'manager', (req, res, body, p) => {
+route('DELETE', '/api/types/:id', 'admin', (req, res, body, p) => {
   if (p.id === 'other') fail(400, '“Other” is kept for sessions that do not fit a type.');
   const used = q('SELECT data FROM sessions').all().filter(r => JSON.parse(r.data).category === p.id).length;
   if (used) fail(409, used + (used === 1 ? ' session uses' : ' sessions use') + ' this type. Change them to another type first.');
@@ -855,10 +865,10 @@ route('DELETE', '/api/types/:id', 'manager', (req, res, body, p) => {
   return {};
 });
 
-/* managers: people */
-route('POST', '/api/users', 'manager', (req, res, body) => {
+/* admins: people */
+route('POST', '/api/users', 'admin', (req, res, body) => {
   const name = cleanName(body.name), email = cleanEmail(body.email), pass = validPassword(body.password);
-  const role = body.role === 'staff' ? 'staff' : 'manager';
+  const role = ROLES.includes(body.role) ? body.role : 'staff';
   tx(() => {
     const existing = q('SELECT id, active FROM users WHERE email = ?').get(email);
     if (existing && existing.active) fail(409, 'That email already has an account.');
@@ -870,8 +880,8 @@ route('POST', '/api/users', 'manager', (req, res, body) => {
   return {};
 });
 
-route('POST', '/api/invites', 'manager', (req, res, body) => {
-  const email = cleanEmail(body.email), role = body.role === 'manager' ? 'manager' : 'staff';
+route('POST', '/api/invites', 'admin', (req, res, body) => {
+  const email = cleanEmail(body.email), role = ROLES.includes(body.role) ? body.role : 'staff';
   if (q('SELECT 1 FROM users WHERE email = ? AND active = 1').get(email)) fail(409, 'That person is already on the team.');
   q("DELETE FROM links WHERE kind = 'invite' AND email = ?").run(email);
   const out = makeLink('invite', { email, role });
@@ -879,21 +889,21 @@ route('POST', '/api/invites', 'manager', (req, res, body) => {
   return out;
 });
 
-route('DELETE', '/api/invites/:id', 'manager', (req, res, body, p) => {
+route('DELETE', '/api/invites/:id', 'admin', (req, res, body, p) => {
   q("DELETE FROM links WHERE id = ? AND kind = 'invite'").run(p.id);
   changed();
   return {};
 });
 
-route('PATCH', '/api/users/:id', 'manager', (req, res, body, p, me) => {
-  if (p.id === me.id) fail(400, 'You cannot change your own role. Ask another manager.');
-  if (!['manager', 'staff'].includes(body.role)) fail(400, 'Bad role.');
+route('PATCH', '/api/users/:id', 'admin', (req, res, body, p, me) => {
+  if (p.id === me.id) fail(400, 'You cannot change your own role. Ask another admin.');
+  if (!ROLES.includes(body.role)) fail(400, 'Bad role.');
   q('UPDATE users SET role = ? WHERE id = ? AND active = 1').run(body.role, p.id);
   changed();
   return {};
 });
 
-route('DELETE', '/api/users/:id', 'manager', (req, res, body, p, me) => {
+route('DELETE', '/api/users/:id', 'admin', (req, res, body, p, me) => {
   if (p.id === me.id) fail(400, 'You cannot remove yourself.');
   tx(() => {
     q('UPDATE users SET active = 0 WHERE id = ?').run(p.id);
@@ -905,7 +915,7 @@ route('DELETE', '/api/users/:id', 'manager', (req, res, body, p, me) => {
   return {};
 });
 
-route('POST', '/api/users/:id/reset', 'manager', (req, res, body, p) => {
+route('POST', '/api/users/:id/reset', 'admin', (req, res, body, p) => {
   const u = q('SELECT id FROM users WHERE id = ? AND active = 1').get(p.id);
   if (!u) fail(404, 'That person is not on the team.');
   q("DELETE FROM links WHERE kind = 'reset' AND user_id = ?").run(u.id);
@@ -964,7 +974,8 @@ async function handleApi(req, res, url) {
       if (!params) continue;
       const me = r.auth === 'none' ? null : currentUser(req);
       if (r.auth !== 'none' && !me) fail(401, 'Please sign in again.');
-      if (r.auth === 'manager' && me.role !== 'manager') fail(403, 'Only managers can change the calendar.');
+      if (r.auth === 'manager' && me.role !== 'manager' && me.role !== 'admin') fail(403, 'Only managers can change the calendar.');
+      if (r.auth === 'admin' && me.role !== 'admin') fail(403, 'Only admins can change settings.');
       const body = req.method === 'GET' ? {} : await readBody(req);
       const out = await r.fn(req, res, body, params, me);
       if (out !== undefined) sendJson(res, 200, out);

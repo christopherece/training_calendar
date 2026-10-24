@@ -1,5 +1,5 @@
 /* Dockside Training: staff training calendar, talking to server.js.
-   Managers plan, edit and reschedule; staff book places. The server decides who may change what. */
+   Managers plan, edit and reschedule; admins also run Settings; staff book places. The server decides who may change what. */
 
 /* training and drill types come from the server (Settings → Training types), each with its spreadsheet colour */
 var TYPES = [], TYPE = {};
@@ -24,6 +24,14 @@ var RE_MONTH = /^\d{4}-\d{2}$/;
 var RE_TIME = /^\d{2}:\d{2}$/;
 var RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 var STATUSES = ['going', 'attended', 'absent'];
+var ROLES = [['admin', 'Admin'], ['manager', 'Manager'], ['staff', 'Staff']];
+var ROLE_ABOUT = {
+  admin: 'Admin: can change Settings (training types and the team), and add, edit and move training.',
+  manager: 'Manager: can add, edit and move training, and see reports.',
+  staff: 'Staff: can view the calendar and book places.'
+};
+function roleSelect(props, value) { return h('select', props, ROLES.map(function (r) { return h('option', { value: r[0], selected: r[0] === value }, r[1]); })); }
+function roleWord(role) { return role === 'admin' ? 'an admin' : role === 'manager' ? 'a manager' : 'staff'; }
 
 /* choices from the marina's training spreadsheet */
 var DURATIONS = ['1 hour', '2 hours', '3 hours', '1/2 Day', '1 Day', '2 Days', '3 Days', '4 Days', '5 Days', '1 Week', '2 Weeks'];
@@ -193,7 +201,7 @@ function cleanSignup(id, d) {
   return { id: id, sessionId: sid, uid: uid, status: STATUSES.indexOf(d.status) >= 0 ? d.status : 'going' };
 }
 function cleanUser(d) {
-  return { id: str(d.id, 64), name: str(d.name, 80), email: str(d.email, 200), role: d.role === 'manager' ? 'manager' : 'staff', active: d.active !== false };
+  return { id: str(d.id, 64), name: str(d.name, 80), email: str(d.email, 200), role: labelOf(ROLES, d.role) ? d.role : 'staff', active: d.active !== false };
 }
 function index() {
   state.bySession = new Map();
@@ -217,7 +225,9 @@ function nameOf(uid) {
   if (uid === state.me.id) return state.me.name || 'You';
   return (state.users[uid] && state.users[uid].name) || 'Former staff member';
 }
+/* isAdmin: can change the calendar (managers and admins). canSettings: the admin role alone */
 function isAdmin() { return state.auth === 'in' && state.me.admin; }
+function canSettings() { return state.auth === 'in' && state.me.role === 'admin'; }
 function whenOf(s) { return s.unscheduled ? 'Day to be set, ' + monthName(s.month) : dateRange(s) + ', ' + s.start; }
 
 /* ---------- toast ---------- */
@@ -262,6 +272,7 @@ function render() {
     index();
     if (state.auth === 'public' && (state.view === 'mine' || state.view === 'settings')) state.view = 'month';
     if (state.view === 'reports' && !isAdmin()) state.view = 'month';
+    if (state.view === 'settings' && !canSettings()) state.view = state.auth === 'in' ? 'mine' : 'month';
     renderBar(); renderFilters();
     var v = state.view;
     var calendar = v === 'month' || v === 'week' || v === 'agenda';
@@ -287,7 +298,7 @@ function renderWho() {
   var kids = [];
   if (state.auth === 'in') {
     kids.push(h('span', { class: 'who-name' }, state.me.name || state.me.email));
-    kids.push(h('span', { class: 'tag tag-accent' }, state.me.admin ? 'Manager' : 'Staff'));
+    kids.push(h('span', { class: 'tag tag-accent' }, labelOf(ROLES, state.me.role)));
     kids.push(h('button', { class: 'btn', type: 'button', 'data-fk': 'signout', onclick: doSignOut }, 'Sign out'));
   } else if (state.auth === 'public') {
     kids.push(h('span', { class: 'tag' }, 'View only'));
@@ -300,7 +311,7 @@ function viewTabs() {
   var tabs = [['month', 'Month'], ['week', 'Week'], ['agenda', 'Agenda']];
   if (state.auth === 'in') tabs.push(['mine', 'My training']);
   if (isAdmin()) tabs.push(['reports', 'Reports']);
-  if (state.auth === 'in') tabs.push(['settings', 'Settings']);
+  if (canSettings()) tabs.push(['settings', 'Settings']);
   return tabs;
 }
 
@@ -1167,6 +1178,8 @@ function mineView() {
   if (needs.length) wrap.append(section('Required sessions to book', needs, ''));
   wrap.append(section('Your upcoming sessions', booked, 'You have nothing booked. Pick a session from the Month, Week or Agenda view.'));
   wrap.append(section('Your history', history, 'Sessions you have attended will be listed here.'));
+  /* your own account and notifications live here, since Settings is for admins only */
+  wrap.append(myAccountSection(), notifySection());
   root.append(wrap);
   return root;
 }
@@ -1467,7 +1480,7 @@ function notifySection() {
       h('ol', { class: 'steps' },
         h('li', null, 'Tap the Share button in Safari.'),
         h('li', null, 'Choose “Add to Home Screen”.'),
-        h('li', null, 'Open the calendar from the new icon, sign in, and come back to Settings.')));
+        h('li', null, 'Open the calendar from the new icon, sign in, and come back to My training.')));
   } else if (p.reason === 'unsupported') {
     box.append(h('p', null, 'This browser cannot receive notifications. Try Chrome, Edge, Firefox or Safari.'));
   } else if (p.permission === 'denied') {
@@ -1503,11 +1516,10 @@ function notifySection() {
     h('p', { class: 'hint-line' }, 'These choices apply to every device you turn notifications on for.'));
 }
 
-/* ---------- settings: your own account, plus the team for managers ---------- */
+/* ---------- settings (admins only): training types and the team ---------- */
 function settingsView() {
   var root = h('div', { class: 'people' });
-  root.append(myAccountSection(), notifySection());
-  if (state.me.admin) root.append(typesSection(), teamSection(), addPersonSection(), inviteSection());
+  root.append(typesSection(), teamSection(), addPersonSection(), inviteSection());
   return root;
 }
 
@@ -1606,26 +1618,25 @@ function myAccountSection() {
 
   return h('section', null,
     h('h2', { class: 'sec-h' }, 'My account'),
-    h('p', { class: 'hint-line', style: { marginBottom: '10px' } }, state.me.email + ' · ' + (state.me.admin ? 'Manager: can add, edit and move training.' : 'Staff: can view the calendar and book places.')),
+    h('p', { class: 'hint-line', style: { marginBottom: '10px' } }, state.me.email + ' · ' + ROLE_ABOUT[state.me.role]),
     h('div', { class: 'settings-grid' }, h('div', null, nameForm, nerr), h('div', null, passForm, perr)));
 }
 
 function teamSection() {
   var members = Object.keys(state.users).map(function (k) { return state.users[k]; })
     .filter(function (u) { return u.active; })
-    .sort(function (a, b) { return (a.role === b.role ? 0 : a.role === 'manager' ? -1 : 1) || (a.name || a.email).localeCompare(b.name || b.email); });
-  var managers = members.filter(function (u) { return u.role === 'manager'; }).length;
+    .sort(function (a, b) { return roleRank(a.role) - roleRank(b.role) || (a.name || a.email).localeCompare(b.name || b.email); });
+  function roleRank(r) { return ROLES.map(function (x) { return x[0]; }).indexOf(r); }
+  function count(r, one, many) { var n = members.filter(function (u) { return u.role === r; }).length; return n + ' ' + (n === 1 ? one : many); }
 
   var table = h('table', { class: 'ptable' },
     h('thead', null, h('tr', null, h('th', null, 'Name'), h('th', null, 'Email'), h('th', null, 'Role'), h('th', null, ''))));
   var body = h('tbody');
   members.forEach(function (u) {
     var self = u.id === state.me.id;
-    var role = h('select', { 'aria-label': 'Role for ' + (u.name || u.email), 'data-fk': 'role-' + u.id, disabled: self },
-      h('option', { value: 'manager', selected: u.role === 'manager' }, 'Manager'),
-      h('option', { value: 'staff', selected: u.role === 'staff' }, 'Staff'));
+    var role = roleSelect({ 'aria-label': 'Role for ' + (u.name || u.email), 'data-fk': 'role-' + u.id, disabled: self }, u.role);
     role.addEventListener('change', async function () {
-      try { await api('PATCH', '/api/users/' + u.id, { role: role.value }); toast((u.name || u.email) + ' is now ' + (role.value === 'manager' ? 'a manager.' : 'staff.')); }
+      try { await api('PATCH', '/api/users/' + u.id, { role: role.value }); toast((u.name || u.email) + ' is now ' + roleWord(role.value) + '.'); }
       catch (e) { toast(e.message); render(); }
     });
     var actions = h('td');
@@ -1644,23 +1655,23 @@ function teamSection() {
   });
   table.append(body);
   return h('section', null,
-    h('h2', { class: 'sec-h' }, 'Team · ' + managers + (managers === 1 ? ' manager' : ' managers') + ', ' + (members.length - managers) + ' staff'),
+    h('h2', { class: 'sec-h' }, 'Team · ' + count('admin', 'admin', 'admins') + ', ' + count('manager', 'manager', 'managers') + ', ' + count('staff', 'staff', 'staff')),
     h('p', { class: 'hint-line', style: { marginBottom: '10px' } },
-      'Managers can add, edit and move training. Staff can book places. ' +
+      'Admins can change these settings, as well as everything managers can do. Managers can add, edit and move training and see reports. Staff can book places. ' +
       (state.publicRead ? 'Anyone with the address can view the calendar without an account. ' : '') +
-      'You cannot change your own role, so there is always at least one manager.'),
+      'You cannot change your own role, so there is always at least one admin.'),
     table);
 }
 
 function addPersonSection() {
   var name = h('input', { id: 'np-name', type: 'text', maxlength: '80', autocomplete: 'off' });
   var email = h('input', { id: 'np-email', type: 'email', autocomplete: 'off', placeholder: 'name@example.com' });
-  var role = h('select', { id: 'np-role' }, h('option', { value: 'manager' }, 'Manager'), h('option', { value: 'staff' }, 'Staff'));
+  var role = roleSelect({ id: 'np-role' }, 'staff');
   var pass = h('input', { id: 'np-pass', type: 'text', autocomplete: 'off', spellcheck: 'false' });
   var err = h('p', { class: 'form-error', role: 'alert' });
   var form = h('form', { class: 'invite-form', novalidate: true },
     fld('np-name', 'Name', name), fld('np-email', 'Email', email), fld('np-role', 'Role', role),
-    fld('np-pass', 'Starting password', pass, 'At least 8 characters. They can change it in Settings.'),
+    fld('np-pass', 'Starting password', pass, 'At least 8 characters. They can change it in My training.'),
     h('button', { class: 'btn primary', type: 'submit' }, 'Add'));
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -1670,19 +1681,19 @@ function addPersonSection() {
     if (pass.value.length < 8) { err.textContent = 'Use a starting password of at least 8 characters.'; pass.focus(); return; }
     try {
       await api('POST', '/api/users', { name: name.value, email: email.value, role: role.value, password: pass.value });
-      toast('Added ' + name.value.trim() + ' as ' + (role.value === 'manager' ? 'a manager' : 'staff') + '. Give them their email and starting password to sign in.');
+      toast('Added ' + name.value.trim() + ' as ' + roleWord(role.value) + '. Give them their email and starting password to sign in.');
       name.value = ''; email.value = ''; pass.value = '';
     } catch (ex) { err.textContent = ex.message; }
   });
   return h('section', null,
-    h('h2', { class: 'sec-h' }, 'Add a manager'),
+    h('h2', { class: 'sec-h' }, 'Add a person'),
     h('p', { class: 'hint-line', style: { marginBottom: '10px' } }, 'Creates the account straight away. Tell them their email and starting password.'),
     form, err);
 }
 
 function inviteSection() {
   var email = h('input', { id: 'inv-email', type: 'email', autocomplete: 'off', placeholder: 'name@example.com' });
-  var role = h('select', { id: 'inv-role' }, h('option', { value: 'manager' }, 'Manager'), h('option', { value: 'staff' }, 'Staff'));
+  var role = roleSelect({ id: 'inv-role' }, 'staff');
   var err = h('p', { class: 'form-error', role: 'alert' });
   var form = h('form', { class: 'invite-form', novalidate: true },
     fld('inv-email', 'Email address', email), fld('inv-role', 'Role', role),
@@ -1697,7 +1708,7 @@ function inviteSection() {
   var inv = h('div', { class: 'cards' });
   state.invites.forEach(function (i) {
     inv.append(h('div', { class: 'sess' },
-      h('div', { class: 'sess-top' }, h('span', { class: 'tag' }, i.role === 'manager' ? 'Manager' : 'Staff'),
+      h('div', { class: 'sess-top' }, h('span', { class: 'tag' }, labelOf(ROLES, i.role) || 'Staff'),
         h('span', { class: 'hint' }, 'Link works until ' + fmtDay.format(new Date(i.expires)))),
       h('p', { style: { margin: 0, overflowWrap: 'anywhere', fontWeight: 600 } }, i.email),
       h('div', { class: 'sess-actions' },
@@ -2354,7 +2365,7 @@ function authView() {
   var email = h('input', { id: 'a-email', type: 'email', autocomplete: 'email' });
   var pass = h('input', { id: 'a-pass', type: 'password', autocomplete: setup || link ? 'new-password' : 'current-password' });
   var go = h('button', { class: 'btn primary', type: 'submit' },
-    setup ? 'Create manager account' : joining ? 'Join the calendar' : resetting ? 'Save new password' : 'Sign in');
+    setup ? 'Create admin account' : joining ? 'Join the calendar' : resetting ? 'Save new password' : 'Sign in');
   var form = h('form', { novalidate: true },
     (setup || joining) && fld('a-name', 'Your name', name),
     !link && fld('a-email', 'Email', email),
@@ -2378,7 +2389,7 @@ function authView() {
 
   if (setup) {
     box.append(h('h2', null, 'Set up the calendar'),
-      h('p', { class: 'muted' }, 'Create the first manager account. You can invite the rest of the team afterwards.'));
+      h('p', { class: 'muted' }, 'Create the first admin account. You can invite the rest of the team afterwards.'));
   } else if (joining) {
     box.append(h('h2', null, 'Join Dockside Training'),
       h('p', { class: 'muted' }, 'You were invited as ' + link.email + '. Enter your name and choose a password.'));
@@ -2443,7 +2454,7 @@ async function load() {
 
 function setMe(u) {
   var keep = state.me && state.me.id === u.id ? state.me.notify : null;
-  state.me = { id: u.id, name: u.name, email: u.email, role: u.role, admin: u.role === 'manager', notify: u.notify || keep || {} };
+  state.me = { id: u.id, name: u.name, email: u.email, role: u.role, admin: u.role === 'manager' || u.role === 'admin', notify: u.notify || keep || {} };
 }
 
 function enterApp(me) {
