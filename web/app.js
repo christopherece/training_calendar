@@ -69,7 +69,7 @@ var fmtDMY = new Intl.DateTimeFormat('en-NZ', { day: 'numeric', month: 'short', 
 function monthName(key) { return fmtMonth.format(fromYmd(key + '-01')); }
 
 /* ---------- state ---------- */
-var VIEWS = ['month', 'week', 'agenda', 'mine', 'settings'];
+var VIEWS = ['month', 'week', 'agenda', 'mine', 'reports', 'settings'];
 function savedView() {
   try { var v = localStorage.getItem('dockside-view'); return VIEWS.indexOf(v) >= 0 ? v : 'month'; } catch (e) { return 'month'; }
 }
@@ -102,6 +102,7 @@ var state = {
   confirmDelete: null,
   confirmRemove: null,
   showPast: false,
+  reportYear: null, /* financial year on the Reports tab, '' for all years; null until first shown */
   sessions: [],   /* sessions with a day */
   plans: [],      /* sessions planned for a month, day not set yet */
   signups: [],
@@ -260,11 +261,12 @@ function render() {
   } else {
     index();
     if (state.auth === 'public' && (state.view === 'mine' || state.view === 'settings')) state.view = 'month';
+    if (state.view === 'reports' && !isAdmin()) state.view = 'month';
     renderBar(); renderFilters();
     var v = state.view;
     var calendar = v === 'month' || v === 'week' || v === 'agenda';
     $('view').replaceChildren(calendar ? weatherStrip() || '' : '',
-      v === 'agenda' ? agendaView() : v === 'mine' ? mineView() : v === 'week' ? weekView() : v === 'settings' ? settingsView() : monthView());
+      v === 'agenda' ? agendaView() : v === 'mine' ? mineView() : v === 'week' ? weekView() : v === 'settings' ? settingsView() : v === 'reports' ? reportsView() : monthView());
   }
   Object.keys(typed).forEach(function (id) {
     var el = document.getElementById(id);
@@ -296,7 +298,9 @@ function renderWho() {
 
 function viewTabs() {
   var tabs = [['month', 'Month'], ['week', 'Week'], ['agenda', 'Agenda']];
-  if (state.auth === 'in') tabs.push(['mine', 'My training'], ['settings', 'Settings']);
+  if (state.auth === 'in') tabs.push(['mine', 'My training']);
+  if (isAdmin()) tabs.push(['reports', 'Reports']);
+  if (state.auth === 'in') tabs.push(['settings', 'Settings']);
   return tabs;
 }
 
@@ -306,6 +310,7 @@ var NAV_ICONS = {
   week: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 5v15M12 5v15M16 5v15"/></svg>',
   agenda: '<svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>',
   mine: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>',
+  reports: '<svg viewBox="0 0 24 24"><path d="M3.5 20.5h17M6.5 20.5V13M11 20.5V6M15.5 20.5v-9M20 20.5V9"/></svg>',
   settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>'
 };
 function renderBottomNav() {
@@ -1164,6 +1169,170 @@ function mineView() {
   wrap.append(section('Your history', history, 'Sessions you have attended will be listed here.'));
   root.append(wrap);
   return root;
+}
+
+/* ---------- reports (managers): attendance at sessions that have started, by financial year ---------- */
+var RP_PARTS = [['attended', 'Attended'], ['absent', 'Absent'], ['going', 'Not marked yet']];
+function reportYears() {
+  var ys = new Set();
+  state.sessions.forEach(function (s) { if (startMs(s) <= Date.now()) ys.add(finYear(s.date)); });
+  return Array.from(ys).sort().reverse();
+}
+function pct(n, d) { return d ? Math.round(n / d * 100) + '%' : '–'; }
+/* round an axis maximum up to 1, 2 or 5 times a power of ten */
+function niceMax(v) {
+  if (v <= 4) return 4;
+  var p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p;
+  return (f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+}
+function tally() { return { attended: 0, absent: 0, going: 0 }; }
+
+function reportsView() {
+  var root = h('div', null, notices());
+  var years = reportYears();
+  /* starts on this financial year, or the latest one with sessions, once the data is in */
+  if (state.reportYear == null && years.length) state.reportYear = years.indexOf(finYear(todayYmd())) >= 0 ? finYear(todayYmd()) : years[0];
+  if (state.reportYear && years.indexOf(state.reportYear) < 0) state.reportYear = '';
+  var year = state.reportYear || '', nowT = Date.now();
+  var held = state.sessions.filter(function (s) {
+    return inFilter(s) && !isOff(s) && startMs(s) <= nowT && (!year || finYear(s.date) === year);
+  }).sort(byStart);
+
+  /* everything below is counted once, from these */
+  var total = tally(), byMonth = {}, byType = {}, byPerson = {};
+  held.forEach(function (s) {
+    var mk = s.date.slice(0, 7), t = s.category;
+    byMonth[mk] = byMonth[mk] || tally();
+    byType[t] = byType[t] || Object.assign(tally(), { sessions: 0 });
+    byType[t].sessions++;
+    signupsOf(s).forEach(function (x) {
+      total[x.status]++; byMonth[mk][x.status]++; byType[t][x.status]++;
+      byPerson[x.uid] = byPerson[x.uid] || Object.assign(tally(), { missed: 0 });
+      byPerson[x.uid][x.status]++;
+    });
+  });
+  /* required sessions each current staff member did not attend */
+  var people = Object.keys(state.users).filter(function (id) { return state.users[id].active; });
+  Object.keys(byPerson).forEach(function (id) { if (people.indexOf(id) < 0) people.push(id); });
+  people.forEach(function (id) { byPerson[id] = byPerson[id] || Object.assign(tally(), { missed: 0 }); });
+  held.filter(function (s) { return s.mandatory; }).forEach(function (s) {
+    var came = new Set(signupsOf(s).filter(function (x) { return x.status === 'attended'; }).map(function (x) { return x.uid; }));
+    people.forEach(function (id) { if (state.users[id] && state.users[id].active && !came.has(id)) byPerson[id].missed++; });
+  });
+
+  var marked = total.attended + total.absent;
+  var head = h('div', { class: 'rp-head' },
+    h('h2', { class: 'sec-h' }, 'Attendance report'),
+    h('label', { class: 'rp-year' }, h('span', null, 'Financial year'),
+      h('select', { 'data-fk': 'rp-year', onchange: function (e) { state.reportYear = e.target.value; render(); } },
+        years.map(function (y) { return h('option', { value: y, selected: y === year }, y); }),
+        h('option', { value: '', selected: !year }, 'All years'))));
+  var wrap = h('div', { class: 'mine reports' }, head,
+    h('div', { class: 'stats' },
+      h('div', { class: 'stat' }, h('b', null, String(held.length)), h('span', null, 'Sessions held')),
+      h('div', { class: 'stat' }, h('b', null, String(marked + total.going)), h('span', null, 'Places booked')),
+      h('div', { class: 'stat' }, h('b', null, pct(total.attended, marked)), h('span', null, 'Attendance rate (of those marked)')),
+      h('div', { class: 'stat' }, h('b', null, String(total.absent)), h('span', null, 'Absences')),
+      h('div', { class: 'stat' + (total.going ? ' rp-todo' : '') }, h('b', null, String(total.going)), h('span', null, 'Not marked yet'))));
+  if (!held.length) {
+    wrap.append(h('p', { class: 'muted' }, 'No sessions have been held' + (year ? ' in ' + year : '') + (state.filter.size ? ' for these types' : '') + ' yet.'));
+    root.append(wrap);
+    return root;
+  }
+  wrap.append(monthChart(byMonth, year), typeChart(byType), personTable(people, byPerson));
+  root.append(wrap);
+  return root;
+}
+
+function rpLegend() {
+  return h('ul', { class: 'rp-legend' }, RP_PARTS.map(function (p) {
+    return h('li', null, h('span', { class: 'rp-sw rp-' + p[0], 'aria-hidden': 'true' }), p[1]);
+  }));
+}
+/* one shared tooltip per chart, shown on hover or keyboard focus */
+function withTip(chart) {
+  var tip = h('div', { class: 'rp-tip', role: 'status', hidden: true });
+  function show(e) {
+    var col = e.target.closest('[data-tip]');
+    if (!col) return;
+    tip.replaceChildren.apply(tip, JSON.parse(col.dataset.tip).map(function (l, i) { return h(i ? 'div' : 'b', null, l); }));
+    tip.hidden = false;
+    var box = chart.getBoundingClientRect(), r = col.getBoundingClientRect();
+    tip.style.left = Math.max(0, Math.min(r.left - box.left + r.width / 2 - tip.offsetWidth / 2, box.width - tip.offsetWidth)) + 'px';
+    tip.style.top = Math.max(0, r.top - box.top - tip.offsetHeight - 6) + 'px';
+  }
+  function hide() { tip.hidden = true; }
+  chart.addEventListener('pointerover', show);
+  chart.addEventListener('focusin', show);
+  chart.addEventListener('pointerleave', hide);
+  chart.addEventListener('focusout', hide);
+  chart.append(tip);
+  return chart;
+}
+
+function monthChart(byMonth, year) {
+  var keys = Object.keys(byMonth).sort(), months = [];
+  /* a financial year always shows July to June; all years run from the first month to the last */
+  var first = year ? (+year.slice(0, 4)) + '-07' : keys[0], last = year ? (+year.slice(0, 4) + 1) + '-06' : keys[keys.length - 1];
+  for (var d = fromYmd(first + '-01'); monthKey(d.getFullYear(), d.getMonth()) <= last; d.setMonth(d.getMonth() + 1)) months.push(monthKey(d.getFullYear(), d.getMonth()));
+  var top = niceMax(Math.max.apply(null, months.map(function (m) { var t = byMonth[m]; return t ? t.attended + t.absent + t.going : 0; })));
+  var fmtShort = new Intl.DateTimeFormat('en-NZ', { month: 'short' });
+  var plot = h('div', { class: 'rp-plot' },
+    [1, 0.75, 0.5, 0.25, 0].map(function (f) { return h('div', { class: 'rp-grid', style: { bottom: f * 100 + '%' } }, h('span', null, String(Math.round(top * f)))); }),
+    months.map(function (m) {
+      var t = byMonth[m] || tally(), n = t.attended + t.absent + t.going, label = monthName(m);
+      var tip = [label, 'Attended ' + t.attended, 'Absent ' + t.absent, 'Not marked yet ' + t.going, 'Rate ' + pct(t.attended, t.attended + t.absent)];
+      return h('div', { class: 'rp-col', tabindex: n ? '0' : null, 'data-tip': n ? JSON.stringify(tip) : null, 'aria-label': n ? tip.join(', ') : label + ', no bookings' },
+        h('div', { class: 'rp-stack', style: { height: n / top * 100 + '%' } },
+          RP_PARTS.map(function (p) { return t[p[0]] ? h('span', { class: 'rp-seg rp-' + p[0], style: { 'flex-grow': String(t[p[0]]) } }) : null; })),
+        h('span', { class: 'rp-x' }, fmtShort.format(fromYmd(m + '-01')) + (year ? '' : ' ’' + m.slice(2, 4))));
+    }));
+  var table = h('table', { class: 'ptable' },
+    h('thead', null, h('tr', null, h('th', null, 'Month'), RP_PARTS.map(function (p) { return h('th', null, p[1]); }), h('th', null, 'Rate'))),
+    h('tbody', null, months.filter(function (m) { return byMonth[m]; }).map(function (m) {
+      var t = byMonth[m];
+      return h('tr', null, h('td', null, monthName(m)), RP_PARTS.map(function (p) { return h('td', null, String(t[p[0]])); }), h('td', null, pct(t.attended, t.attended + t.absent)));
+    })));
+  return h('section', { class: 'sheet rp-card' },
+    h('h3', { class: 'wx-title' }, 'Attendance by month'),
+    h('p', { class: 'muted rp-sub' }, 'Places booked on sessions held each month, by what happened.'),
+    rpLegend(),
+    withTip(h('div', { class: 'rp-chart' }, plot)),
+    h('details', { class: 'rp-table' }, h('summary', null, 'Show as a table'), table));
+}
+
+function typeChart(byType) {
+  var rows = Object.keys(byType).map(function (id) { return Object.assign({ t: catOf(id) }, byType[id]); })
+    .sort(function (a, b) { return (b.attended + b.absent + b.going) - (a.attended + a.absent + a.going) || a.t.name.localeCompare(b.t.name); });
+  return h('section', { class: 'sheet rp-card' },
+    h('h3', { class: 'wx-title' }, 'Attendance rate by training type'),
+    h('p', { class: 'muted rp-sub' }, 'Share of marked places that attended. Types with nothing marked yet show a dash.'),
+    withTip(h('div', { class: 'rp-chart rp-bars' }, rows.map(function (r) {
+      var m = r.attended + r.absent, rate = m ? r.attended / m : 0;
+      var tip = [r.t.name, r.sessions + (r.sessions === 1 ? ' session' : ' sessions'), 'Attended ' + r.attended + ' of ' + m + ' marked', 'Absent ' + r.absent, 'Not marked yet ' + r.going];
+      return h('div', { class: 'rp-bar-row', tabindex: '0', 'data-tip': JSON.stringify(tip), 'aria-label': tip.join(', ') },
+        h('span', { class: 'rp-bar-name' }, h('span', { class: 'sw', 'aria-hidden': 'true', style: { '--cat': r.t.color } }), r.t.name),
+        h('span', { class: 'rp-track' }, m ? h('span', { class: 'rp-fill', style: { width: rate * 100 + '%' } }) : null),
+        h('span', { class: 'rp-val' }, pct(r.attended, m), h('small', null, ' ' + r.attended + '/' + m)));
+    }))));
+}
+
+function personTable(people, byPerson) {
+  people = people.slice().sort(function (a, b) { return nameOf(a).localeCompare(nameOf(b)); });
+  return h('section', { class: 'rp-card' },
+    h('h2', { class: 'sec-h' }, 'By person'),
+    h('table', { class: 'ptable rp-people' },
+      h('thead', null, h('tr', null, ['Name', 'Attended', 'Absent', 'Not marked yet', 'Required, not attended', 'Rate'].map(function (c) { return h('th', null, c); }))),
+      h('tbody', null, people.map(function (id) {
+        var p = byPerson[id], m = p.attended + p.absent;
+        return h('tr', null,
+          h('td', null, nameOf(id), state.users[id] && !state.users[id].active ? h('span', { class: 'muted' }, ' (removed)') : null),
+          h('td', { 'data-l': 'Attended' }, String(p.attended)),
+          h('td', { 'data-l': 'Absent' }, String(p.absent)),
+          h('td', { 'data-l': 'Not marked yet' }, String(p.going)),
+          h('td', { 'data-l': 'Required, not attended', class: p.missed ? 'rp-miss' : null }, String(p.missed)),
+          h('td', { 'data-l': 'Rate' }, h('span', { class: 'rp-meter' }, h('span', { class: 'rp-track' }, m ? h('span', { class: 'rp-fill', style: { width: p.attended / m * 100 + '%' } }) : null), pct(p.attended, m))));
+      }))));
 }
 
 /* ---------- push notifications on this device ---------- */

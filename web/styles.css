@@ -643,3 +643,54 @@ html { -webkit-tap-highlight-color: transparent; }
 .remind-to .field.check { font-size: 15px; }
 .remind-to input:disabled + * , .remind-to label:has(input:disabled) { color: var(--muted); }
 .remind-preview { margin: 0; padding: 10px 12px; background: var(--surface-2); border-left: 3px solid var(--sky); font-size: 14px; }
+
+/* ---------- reports (managers) ---------- */
+.reports { gap: 18px; }
+.rp-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px 16px; }
+.rp-head .sec-h { margin: 0; }
+.rp-year { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.rp-year select { min-height: 38px; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-weight: 500; }
+.stat.rp-todo b { color: var(--c-safety); }
+.rp-card { display: grid; gap: 10px; min-width: 0; }
+.rp-sub { margin: -4px 0 0; font-size: 13.5px; }
+.rp-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.rp-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.rp-sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+/* status colours: attended / absent (hatched, so it never relies on red and green alone) / not marked */
+.rp-attended { background: var(--ok); }
+.rp-absent { background: var(--bad) repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in srgb, var(--surface) 55%, transparent) 3px 5px); }
+.rp-going { background: color-mix(in srgb, var(--muted) 45%, var(--surface)); }
+.rp-chart { position: relative; }
+.rp-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(5, 15, 22, .16); padding: 7px 10px; font-size: 12.5px; line-height: 1.45; white-space: nowrap; }
+.rp-tip b { display: block; margin-bottom: 2px; }
+.rp-plot { position: relative; height: 220px; margin: 14px 0 26px 30px; display: flex; align-items: flex-end; gap: 4px; }
+.rp-grid { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); pointer-events: none; }
+.rp-grid span { position: absolute; right: calc(100% + 6px); top: -8px; font-size: 11px; color: var(--muted); }
+.rp-col { position: relative; flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; outline-offset: 2px; }
+.rp-col[data-tip] { cursor: default; }
+.rp-col[data-tip]:hover .rp-stack, .rp-col:focus-visible .rp-stack { filter: brightness(1.08); }
+.rp-stack { width: min(100%, 34px); display: flex; flex-direction: column-reverse; gap: 2px; }
+.rp-seg { display: block; min-height: 3px; flex-basis: 0; }
+.rp-stack .rp-seg:last-child { border-radius: 4px 4px 0 0; }
+.rp-x { position: absolute; top: calc(100% + 6px); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.rp-table summary { cursor: pointer; font-size: 13.5px; color: var(--accent); font-weight: 600; }
+.rp-table .ptable { margin-top: 8px; }
+.rp-bars { display: grid; gap: 2px; }
+.rp-bar-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(80px, 3fr) 76px; align-items: center; gap: 10px; padding: 6px 4px; font-size: 13.5px; outline-offset: -2px; }
+.rp-bar-row:hover, .rp-bar-row:focus-visible { background: var(--surface-2); }
+.rp-bar-name { display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-track { display: block; height: 10px; background: var(--surface-2); border-radius: 0 4px 4px 0; overflow: hidden; }
+.rp-fill { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.rp-val { text-align: right; font-weight: 600; }
+.rp-val small { font-weight: 400; color: var(--muted); font-size: 12px; }
+.rp-meter { display: inline-grid; grid-template-columns: 70px auto; align-items: center; gap: 8px; }
+.rp-miss { color: var(--bad); font-weight: 700; }
+@media (max-width: 640px) {
+  .rp-plot { height: 180px; gap: 2px; margin-left: 24px; }
+  .rp-x { font-size: 10px; writing-mode: vertical-rl; transform: rotate(180deg); top: calc(100% + 4px); }
+  .rp-plot { margin-bottom: 44px; }
+  .rp-bar-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .rp-val { white-space: nowrap; }
+  .rp-bar-row .rp-track { grid-column: 1 / -1; grid-row: 2; }
+  .rp-people td[data-l]::before { content: attr(data-l) ': '; color: var(--muted); }
+}
